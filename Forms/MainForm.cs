@@ -1,10 +1,15 @@
+using NAudio.Wave;
+using WinSynth.Synth;
+
 namespace WinSynth.Forms;
 
 public class MainForm : Form
 {
     public int KeyWidth => ClientSize.Width / 7;
     public int KeyHeight => ClientSize.Height;
-    public Panel Piano = new();
+
+    public Panel PianoPanel = new();
+    public Piano PianoModel = new();
 
     public MainForm()
     {
@@ -25,14 +30,14 @@ public class MainForm : Form
 
         OnResize(EventArgs.Empty);
 
-        Piano.Focus();
+        PianoPanel.Focus();
     }
 
     public void ResizePiano()
     {
-        Piano.Size = new Size(ClientSize.Width, ClientSize.Height);
+        PianoPanel.Size = new Size(ClientSize.Width, ClientSize.Height);
 
-        foreach (var control in Piano.Controls)
+        foreach (var control in PianoPanel.Controls)
         {
             var button = (Button)control;
 
@@ -70,15 +75,18 @@ public class MainForm : Form
 
     public void InitializePiano()
     {
-        Piano.Dock = DockStyle.Fill;
+        PianoPanel.Dock = DockStyle.Fill;
 
-        void Play(Button button)
+        void Down(Button button)
         {
             button.BackColor = Color.FromArgb(255, 255, 0);
             button.ForeColor = Color.FromArgb(15, 15, 15);
+
+            if (PianoModel.Channels[button.TabIndex].PlaybackState != PlaybackState.Playing)
+                PianoModel.Play(button.TabIndex, 4);
         }
 
-        void Stop(Button button)
+        void Up(Button button)
         {
             if (button.Name.Length == 1)
             {
@@ -90,26 +98,29 @@ public class MainForm : Form
                 button.BackColor = Color.FromArgb(15, 15, 15);
                 button.ForeColor = Color.FromArgb(255, 255, 255);
             }
+
+            if (PianoModel.Channels[button.TabIndex].PlaybackState == PlaybackState.Playing)
+                PianoModel.Stop(button.TabIndex);
         }
 
-        Piano.KeyDown += (s, e) =>
+        PianoPanel.KeyDown += (s, e) =>
         {
-            foreach (var control in Piano.Controls)
+            foreach (var control in PianoPanel.Controls)
             {
                 if (control.GetType() == typeof(Button))
                 {
                     var button = (Button)control;
                     if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
                     {
-                        Play(button);
+                        Down(button);
                     }
                 }
             }
         };
 
-        Piano.KeyUp += (s, e) =>
+        PianoPanel.KeyUp += (s, e) =>
         {
-            foreach (var control in Piano.Controls)
+            foreach (var control in PianoPanel.Controls)
             {
                 if (control.GetType() == typeof(Button))
                 {
@@ -117,7 +128,7 @@ public class MainForm : Form
 
                     if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
                     {
-                        Stop(button);
+                        Up(button);
                     }
                 }
             }
@@ -139,9 +150,9 @@ public class MainForm : Form
                 TextAlign = ContentAlignment.BottomCenter,
             };
 
-            button.MouseDown += (s, e) => Play(button);
-            button.MouseUp += (s, e) => Stop(button);
-            button.GotFocus += (s, e) => Piano.Focus();
+            button.MouseDown += (s, e) => Down(button);
+            button.MouseUp += (s, e) => Up(button);
+            button.GotFocus += (s, e) => PianoPanel.Focus();
 
             if (button.Name.Length == 1)
             {
@@ -155,7 +166,7 @@ public class MainForm : Form
                 blackKeys = [.. blackKeys, button];
             }
 
-            Piano.Controls.Add(button);
+            PianoPanel.Controls.Add(button);
         }
 
         foreach (var key in blackKeys)
@@ -163,6 +174,6 @@ public class MainForm : Form
             key.BringToFront();
         }
 
-        Controls.Add(Piano);
+        Controls.Add(PianoPanel);
     }
 }
