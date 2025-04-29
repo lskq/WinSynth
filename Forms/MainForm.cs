@@ -24,6 +24,8 @@ public class MainForm : Form
         InitializePiano();
 
         OnResize(EventArgs.Empty);
+
+        Piano.Focus();
     }
 
     public void ResizePiano()
@@ -70,17 +72,76 @@ public class MainForm : Form
     {
         Piano.Dock = DockStyle.Fill;
 
+        void Play(Button button)
+        {
+            button.BackColor = Color.FromArgb(255, 255, 0);
+            button.ForeColor = Color.FromArgb(15, 15, 15);
+        }
+
+        void Stop(Button button)
+        {
+            if (button.Name.Length == 1)
+            {
+                button.BackColor = Color.FromArgb(255, 255, 255);
+                button.ForeColor = Color.FromArgb(15, 15, 15);
+            }
+            else
+            {
+                button.BackColor = Color.FromArgb(15, 15, 15);
+                button.ForeColor = Color.FromArgb(255, 255, 255);
+            }
+        }
+
+        Piano.KeyDown += (s, e) =>
+        {
+            foreach (var control in Piano.Controls)
+            {
+                if (control.GetType() == typeof(Button))
+                {
+                    var button = (Button)control;
+                    if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
+                    {
+                        Play(button);
+                    }
+                }
+            }
+        };
+
+        Piano.KeyUp += (s, e) =>
+        {
+            foreach (var control in Piano.Controls)
+            {
+                if (control.GetType() == typeof(Button))
+                {
+                    var button = (Button)control;
+
+                    if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
+                    {
+                        Stop(button);
+                    }
+                }
+            }
+        };
+
         Button[] blackKeys = [];
-        string[] labels = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        string[] name = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        string[] text = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"];
+        Keys[] keys = [Keys.A, Keys.W, Keys.S, Keys.E, Keys.D, Keys.F, Keys.T, Keys.G, Keys.Y, Keys.H, Keys.U, Keys.J];
+
         for (int i = 0; i < 12; i++)
         {
             var button = new Button
             {
                 TabIndex = i,
-                Name = labels[i],
-                Text = labels[i],
+                Name = name[i],
+                Text = text[i],
+                Tag = keys[i],
                 TextAlign = ContentAlignment.BottomCenter,
             };
+
+            button.MouseDown += (s, e) => Play(button);
+            button.MouseUp += (s, e) => Stop(button);
+            button.GotFocus += (s, e) => Piano.Focus();
 
             if (button.Name.Length == 1)
             {
