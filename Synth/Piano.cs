@@ -1,53 +1,32 @@
-using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
+using NAudio.Midi;
 
 namespace WinSynth.Synth;
 
 public class Piano
 {
-    public WaveOutEvent[] Channels;
+    public MidiOut MidiOut = new(0);
+    public bool[] NotePlaying = new bool[12];
 
-    public static double[] Notes =
-    [
-        16.35,
-        17.32,
-        18.35,
-        19.45,
-        20.6,
-        21.83,
-        23.12,
-        24.5,
-        25.96,
-        27.5,
-        29.14,
-        30.87
-    ];
-
-    public Piano()
+    public void Play(int note, int octave)
     {
-        Channels = new WaveOutEvent[12];
-        for (int i = 0; i < 12; i++)
+        if (!NotePlaying[note])
         {
-            Channels[i] = new WaveOutEvent();
+            NotePlaying[note] = true;
+
+            int noteNumber = (note + 12) * (octave + 1);
+            var noteOnEvent = new NoteOnEvent(0, 1, noteNumber, 100, 50);
+
+            MidiOut.Send(noteOnEvent.GetAsShortMessage());
         }
     }
 
-    public void Play(int note, int octave, SignalGeneratorType waveType = SignalGeneratorType.Square)
+    public void Stop(int note, int octave)
     {
-        var generator = new SignalGenerator()
-        {
-            Gain = 0.1,
-            Frequency = Math.Pow(Notes[note], 1 + octave),
-            Type = waveType
-        };
+        NotePlaying[note] = false;
 
-        var wo = Channels[note];
-        wo.Init(generator);
-        wo.Play();
-    }
+        int noteNumber = (note + 12) * (octave + 1);
+        var noteOnEvent = new NoteOnEvent(0, 1, noteNumber, 0, 0);
 
-    public void Stop(int note)
-    {
-        Channels[note].Stop();
+        MidiOut.Send(noteOnEvent.GetAsShortMessage());
     }
 }

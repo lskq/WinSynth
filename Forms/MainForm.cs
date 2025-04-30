@@ -1,4 +1,3 @@
-using NAudio.Wave;
 using WinSynth.Synth;
 
 namespace WinSynth.Forms;
@@ -82,8 +81,7 @@ public class MainForm : Form
             button.BackColor = Color.FromArgb(255, 255, 0);
             button.ForeColor = Color.FromArgb(15, 15, 15);
 
-            if (PianoModel.Channels[button.TabIndex].PlaybackState != PlaybackState.Playing)
-                PianoModel.Play(button.TabIndex, 4);
+            PianoModel.Play(button.TabIndex, 4);
         }
 
         void Up(Button button)
@@ -99,8 +97,7 @@ public class MainForm : Form
                 button.ForeColor = Color.FromArgb(255, 255, 255);
             }
 
-            if (PianoModel.Channels[button.TabIndex].PlaybackState == PlaybackState.Playing)
-                PianoModel.Stop(button.TabIndex);
+            PianoModel.Stop(button.TabIndex, 4);
         }
 
         PianoPanel.KeyDown += (s, e) =>
