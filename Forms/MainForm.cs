@@ -4,9 +4,10 @@ namespace WinSynth.Forms;
 
 public class MainForm : Form
 {
-    public int KeyWidth => ClientSize.Width / 7;
-    public int KeyHeight => ClientSize.Height;
+    public int KeyWidth => PianoPanel.Size.Width / 7;
+    public int KeyHeight => PianoPanel.Size.Height;
 
+    public Panel ModPanel = new();
     public Panel PianoPanel = new();
     public Piano PianoModel = new();
 
@@ -17,7 +18,8 @@ public class MainForm : Form
 
     override protected void OnResize(EventArgs e)
     {
-        ResizePiano();
+        ResizePianoPanel();
+        ResizeModPanel();
     }
 
     public void InitializeComponent()
@@ -25,16 +27,24 @@ public class MainForm : Form
         Text = "WinSynth";
         MinimumSize = new Size(800, 400);
 
-        InitializePiano();
+        InitializePianoPanel();
+        InitializeModPanel();
 
         OnResize(EventArgs.Empty);
 
         PianoPanel.Focus();
     }
 
-    public void ResizePiano()
+    public void ResizeModPanel()
     {
-        PianoPanel.Size = new Size(ClientSize.Width, ClientSize.Height);
+        ModPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 6);
+        ModPanel.Location = new Point(0, 0);
+    }
+
+    public void ResizePianoPanel()
+    {
+        PianoPanel.Size = new Size(ClientSize.Width, ClientSize.Height * 5 / 6);
+        PianoPanel.Location = new Point(0, ClientSize.Height / 6);
 
         foreach (var control in PianoPanel.Controls)
         {
@@ -44,13 +54,17 @@ public class MainForm : Form
             {
                 button.Width = KeyWidth;
                 button.Height = KeyHeight;
-                button.Font = new Font("", KeyHeight / 10);
+
+                var fontSize = KeyHeight / 10 == 0 ? 1 : KeyHeight / 10;
+                button.Font = new Font("", fontSize);
             }
             else
             {
                 button.Width = KeyWidth / 2;
                 button.Height = KeyHeight * 3 / 4;
-                button.Font = new Font("", KeyHeight / 20);
+
+                var fontSize = KeyHeight / 20 == 0 ? 1 : KeyHeight / 20;
+                button.Font = new Font("", fontSize);
             }
 
             button.Location = button.Name switch
@@ -72,10 +86,41 @@ public class MainForm : Form
         }
     }
 
-    public void InitializePiano()
+    public void InitializeModPanel()
     {
-        PianoPanel.Dock = DockStyle.Fill;
+        ModPanel.BackColor = Color.FromArgb(255, 0, 0);
 
+        var dropdown = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+        };
+
+        dropdown.Items.AddRange
+        ([
+            "MIDI",
+            "Sine",
+            "Triangle",
+            "Square",
+            "Sawtooth",
+            "Pink Noise",
+            "White Noise"
+        ]);
+
+        dropdown.SelectedIndex = 0;
+
+        dropdown.SelectedIndexChanged += (o, e) =>
+        {
+            PianoModel.Mode = dropdown.SelectedIndex;
+            PianoPanel.Focus();
+        };
+
+        ModPanel.Controls.Add(dropdown);
+
+        Controls.Add(ModPanel);
+    }
+
+    public void InitializePianoPanel()
+    {
         void Down(Button button)
         {
             button.BackColor = Color.FromArgb(255, 255, 0);
