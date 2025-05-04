@@ -11,6 +11,7 @@ public class Piano
     public bool[] NotePlaying = new bool[12];
 
     public int Mode = 0;
+    public int Volume = 50;
     public static double[] Notes =
     [
         16.35,
@@ -42,7 +43,7 @@ public class Piano
         if (Mode == 0)
         {
             int noteNumber = note + (12 * (octave + 1));
-            var noteOnEvent = new NoteOnEvent(0, 1, noteNumber, 100, 50);
+            var noteOnEvent = new NoteOnEvent(0, 1, noteNumber, Volume, 50);
 
             MidiOut.Send(noteOnEvent.GetAsShortMessage());
         }
@@ -61,8 +62,8 @@ public class Piano
 
             var generator = new SignalGenerator()
             {
-                Gain = 0.1,
-                Frequency = Math.Pow(Notes[note], octave + 1),
+                Gain = Volume / 100.0,
+                Frequency = Notes[note] * Math.Pow(2, octave),
                 Type = waveType
             };
 

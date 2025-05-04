@@ -39,6 +39,14 @@ public class MainForm : Form
     {
         ModPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 6);
         ModPanel.Location = new Point(0, 0);
+
+        for (int i = 0; i < ModPanel.Controls.Count; i++)
+        {
+            var control = ModPanel.Controls[i];
+
+            control.Size = new Size(ModPanel.Width / 5, ModPanel.Height / 5);
+            control.Location = new Point(ModPanel.Width * (1 + i * 5) / 10, ModPanel.Height / 3);
+        }
     }
 
     public void ResizePianoPanel()
@@ -115,6 +123,23 @@ public class MainForm : Form
         };
 
         ModPanel.Controls.Add(dropdown);
+
+        var trackbar = new TrackBar
+        {
+            Minimum = 1,
+            Maximum = 10,
+            Value = 5,
+            TickFrequency = 1
+        };
+
+        trackbar.Scroll += (o, e) =>
+        {
+            PianoModel.Volume = trackbar.Value * 10;
+        };
+
+        trackbar.MouseUp += (o, e) => PianoPanel.Focus();
+
+        ModPanel.Controls.Add(trackbar);
 
         Controls.Add(ModPanel);
     }
