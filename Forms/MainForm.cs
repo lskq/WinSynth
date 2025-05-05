@@ -44,8 +44,8 @@ public class MainForm : Form
         {
             var control = ModPanel.Controls[i];
 
-            control.Size = new Size(ModPanel.Width / 5, ModPanel.Height / 5);
-            control.Location = new Point(ModPanel.Width * (1 + i * 5) / 10, ModPanel.Height / 3);
+            control.Size = new Size(ModPanel.Width / 6, ModPanel.Height / 6);
+            control.Location = new Point(ModPanel.Width * i * 2 / 6, ModPanel.Height / 3);
         }
     }
 
@@ -124,7 +124,7 @@ public class MainForm : Form
 
         ModPanel.Controls.Add(dropdown);
 
-        var trackbar = new TrackBar
+        var gainBar = new TrackBar
         {
             Minimum = 1,
             Maximum = 10,
@@ -132,14 +132,31 @@ public class MainForm : Form
             TickFrequency = 1
         };
 
-        trackbar.Scroll += (o, e) =>
+        gainBar.Scroll += (o, e) =>
         {
-            PianoModel.Volume = trackbar.Value * 10;
+            PianoModel.Gain = gainBar.Value * 10;
         };
 
-        trackbar.MouseUp += (o, e) => PianoPanel.Focus();
+        gainBar.MouseUp += (o, e) => PianoPanel.Focus();
 
-        ModPanel.Controls.Add(trackbar);
+        ModPanel.Controls.Add(gainBar);
+
+        var freqBar = new TrackBar
+        {
+            Minimum = 0,
+            Maximum = 8,
+            Value = 4,
+            TickFrequency = 1
+        };
+
+        freqBar.Scroll += (o, e) =>
+        {
+            PianoModel.Frequency = freqBar.Value;
+        };
+
+        freqBar.MouseUp += (o, e) => PianoPanel.Focus();
+
+        ModPanel.Controls.Add(freqBar);
 
         Controls.Add(ModPanel);
     }
