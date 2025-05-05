@@ -7,6 +7,7 @@ public class MainForm : Form
     public int KeyWidth => PianoPanel.Size.Width / 7;
     public int KeyHeight => PianoPanel.Size.Height;
 
+    public Panel PlaybackPanel = new();
     public Panel ModPanel = new();
     public Panel PianoPanel = new();
     public Piano PianoModel = new();
@@ -18,6 +19,7 @@ public class MainForm : Form
 
     override protected void OnResize(EventArgs e)
     {
+        ResizePlaybackPanel();
         ResizePianoPanel();
         ResizeModPanel();
     }
@@ -25,31 +27,58 @@ public class MainForm : Form
     public void InitializeComponent()
     {
         Text = "WinSynth";
-        MinimumSize = new Size(800, 400);
+        MinimumSize = new Size(800, 600);
 
-        InitializePianoPanel();
+        InitializePlaybackPanel();
         InitializeModPanel();
+        InitializePianoPanel();
 
         OnResize(EventArgs.Empty);
 
         PianoPanel.Focus();
     }
 
+    public void ResizePlaybackPanel()
+    {
+        PlaybackPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 16);
+        PlaybackPanel.Location = new Point(0, 0);
+
+        for (int i = 0; i < PlaybackPanel.Controls.Count; i++)
+        {
+            var control = PlaybackPanel.Controls[i];
+
+            control.Size = new Size(PlaybackPanel.Height, PlaybackPanel.Height);
+            control.Location = new Point(control.Width * i, 0);
+
+            var fontSize = control.Height / 2 == 0 ? 1 : control.Height / 2;
+            control.Font = new Font("", fontSize);
+        }
+    }
+
     public void ResizeModPanel()
     {
-        ModPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 6);
-        ModPanel.Location = new Point(0, 0);
+        ModPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 16);
+        ModPanel.Location = new Point(0, ClientSize.Height / 16);
+
+        int controlWidth = ModPanel.Width / 6;
+        int controlHeight = ModPanel.Height;
+
 
         var n = ModPanel.Controls.Count;
         for (int i = 0; i < ModPanel.Controls.Count; i++)
         {
             var control = ModPanel.Controls[i];
 
-            control.Size = new Size(ModPanel.Width / 6, ModPanel.Height);
-            control.Location = new Point(ModPanel.Width * i / n, 0);
+            control.Size = new Size(controlWidth, controlHeight);
 
-            if (control.GetType() == typeof(Panel))
+            if (control.GetType() != typeof(Panel))
             {
+                control.Location = new Point(0, ModPanel.Height / 4);
+            }
+            else
+            {
+                control.Location = new Point(controlWidth * i, 0);
+
                 var m = control.Controls.Count;
                 for (int j = 0; j < control.Controls.Count; j++)
                 {
@@ -58,7 +87,7 @@ public class MainForm : Form
                     subcontrol.Size = new Size(control.Width, control.Height / 2);
                     subcontrol.Location = new Point(0, control.Height * j * 2 / 4);
 
-                    var fontSize = control.Height / 6 == 0 ? 1 : control.Height / 6;
+                    var fontSize = control.Height / 4 == 0 ? 1 : control.Height / 4;
                     subcontrol.Font = new Font("", fontSize);
                 }
             }
@@ -67,8 +96,8 @@ public class MainForm : Form
 
     public void ResizePianoPanel()
     {
-        PianoPanel.Size = new Size(ClientSize.Width, ClientSize.Height * 5 / 6);
-        PianoPanel.Location = new Point(0, ClientSize.Height / 6);
+        PianoPanel.Size = new Size(ClientSize.Width, ClientSize.Height * 7 / 8);
+        PianoPanel.Location = new Point(0, ClientSize.Height * 1 / 8);
 
         foreach (var control in PianoPanel.Controls)
         {
@@ -110,9 +139,44 @@ public class MainForm : Form
         }
     }
 
+    public void InitializePlaybackPanel()
+    {
+        ModPanel.BackColor = SystemColors.ControlLightLight;
+
+        Button[] buttons = [
+            new Button{ Name = "Play", Text = "⏯" },
+            new Button{ Name = "Stop", Text = "⏹" },
+            new Button{ Name = "Record", Text = "⏺" },
+        ];
+
+        foreach (var button in buttons)
+        {
+            button.BackColor = Color.Transparent;
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 0;
+
+            switch (button.Name)
+            {
+                case "Play":
+                    // Play
+                    break;
+                case "Stop":
+                    // Stop
+                    break;
+                case "Record":
+                    // Record
+                    break;
+            }
+
+            PlaybackPanel.Controls.Add(button);
+        }
+
+        Controls.Add(PlaybackPanel);
+    }
+
     public void InitializeModPanel()
     {
-        ModPanel.BackColor = Color.FromArgb(255, 0, 0);
+        ModPanel.BackColor = SystemColors.ControlLight;
 
         var dropdown = new ComboBox
         {
@@ -142,7 +206,7 @@ public class MainForm : Form
 
         var gainPanel = new Panel();
 
-        var gainLabel = new Label { Text = "Gain: 50%", TextAlign = ContentAlignment.MiddleLeft };
+        var gainLabel = new Label { Text = "Gain: 0.5", TextAlign = ContentAlignment.MiddleCenter };
 
         gainPanel.Controls.Add(gainLabel);
 
@@ -156,10 +220,10 @@ public class MainForm : Form
 
         gainBar.Scroll += (o, e) =>
         {
-            var gain = gainBar.Value * 10;
+            var gain = gainBar.Value / 10d;
 
             PianoModel.Gain = gain;
-            gainLabel.Text = $"Gain: {gain}%";
+            gainLabel.Text = $"Gain: {gain:0.0}";
         };
 
         gainBar.MouseUp += (o, e) => PianoPanel.Focus();
@@ -170,7 +234,7 @@ public class MainForm : Form
 
         var freqPanel = new Panel();
 
-        var freqLabel = new Label { Text = "Octave: 4", TextAlign = ContentAlignment.MiddleLeft };
+        var freqLabel = new Label { Text = "Octave: 4", TextAlign = ContentAlignment.MiddleCenter };
 
         freqPanel.Controls.Add(freqLabel);
 
