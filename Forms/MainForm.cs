@@ -151,7 +151,7 @@ public class MainForm : Form
             button.BackColor = Color.FromArgb(255, 255, 0);
             button.ForeColor = Color.FromArgb(15, 15, 15);
 
-            PianoModel.Play(button.TabIndex, 4);
+            PianoModel.Play(button.TabIndex);
         }
 
         void Up(Button button)
@@ -167,7 +167,7 @@ public class MainForm : Form
                 button.ForeColor = Color.FromArgb(255, 255, 255);
             }
 
-            PianoModel.Stop(button.TabIndex, 4);
+            PianoModel.Stop(button.TabIndex);
         }
 
         PianoPanel.KeyDown += (s, e) =>
@@ -192,7 +192,6 @@ public class MainForm : Form
                 if (control.GetType() == typeof(Button))
                 {
                     var button = (Button)control;
-
                     if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
                     {
                         Up(button);
@@ -202,18 +201,32 @@ public class MainForm : Form
         };
 
         Button[] blackKeys = [];
-        string[] name = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        string[] text = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"];
-        Keys[] keys = [Keys.A, Keys.W, Keys.S, Keys.E, Keys.D, Keys.F, Keys.T, Keys.G, Keys.Y, Keys.H, Keys.U, Keys.J];
+
+        (string, string, Keys)[] keyData =
+        [
+            // name, text, tag
+            ("C", "a", Keys.A),
+            ("C#", "w", Keys.W),
+            ("D", "s", Keys.S),
+            ("D#", "e", Keys.E),
+            ("E", "d", Keys.D),
+            ("F", "f", Keys.F),
+            ("F#", "t", Keys.T),
+            ("G", "g", Keys.G),
+            ("G#", "y", Keys.Y),
+            ("A", "h", Keys.H),
+            ("A#", "u", Keys.U),
+            ("B", "j", Keys.J)
+        ];
 
         for (int i = 0; i < 12; i++)
         {
             var button = new Button
             {
                 TabIndex = i,
-                Name = name[i],
-                Text = text[i],
-                Tag = keys[i],
+                Name = keyData[i].Item1,
+                Text = keyData[i].Item2,
+                Tag = keyData[i].Item3,
                 TextAlign = ContentAlignment.BottomCenter,
             };
 
