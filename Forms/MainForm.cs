@@ -40,12 +40,28 @@ public class MainForm : Form
         ModPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 6);
         ModPanel.Location = new Point(0, 0);
 
+        var n = ModPanel.Controls.Count;
         for (int i = 0; i < ModPanel.Controls.Count; i++)
         {
             var control = ModPanel.Controls[i];
 
-            control.Size = new Size(ModPanel.Width / 6, ModPanel.Height / 6);
-            control.Location = new Point(ModPanel.Width * i * 2 / 6, ModPanel.Height / 3);
+            control.Size = new Size(ModPanel.Width / 6, ModPanel.Height);
+            control.Location = new Point(ModPanel.Width * i / n, 0);
+
+            if (control.GetType() == typeof(Panel))
+            {
+                var m = control.Controls.Count;
+                for (int j = 0; j < control.Controls.Count; j++)
+                {
+                    var subcontrol = control.Controls[j];
+
+                    subcontrol.Size = new Size(control.Width, control.Height / 2);
+                    subcontrol.Location = new Point(0, control.Height * j * 2 / 4);
+
+                    var fontSize = control.Height / 6 == 0 ? 1 : control.Height / 6;
+                    subcontrol.Font = new Font("", fontSize);
+                }
+            }
         }
     }
 
@@ -124,9 +140,15 @@ public class MainForm : Form
 
         ModPanel.Controls.Add(dropdown);
 
+        var gainPanel = new Panel();
+
+        var gainLabel = new Label { Text = "Gain: 50%", TextAlign = ContentAlignment.MiddleLeft };
+
+        gainPanel.Controls.Add(gainLabel);
+
         var gainBar = new TrackBar
         {
-            Minimum = 1,
+            Minimum = 0,
             Maximum = 10,
             Value = 5,
             TickFrequency = 1
@@ -134,12 +156,23 @@ public class MainForm : Form
 
         gainBar.Scroll += (o, e) =>
         {
-            PianoModel.Gain = gainBar.Value * 10;
+            var gain = gainBar.Value * 10;
+
+            PianoModel.Gain = gain;
+            gainLabel.Text = $"Gain: {gain}%";
         };
 
         gainBar.MouseUp += (o, e) => PianoPanel.Focus();
 
-        ModPanel.Controls.Add(gainBar);
+        gainPanel.Controls.Add(gainBar);
+
+        ModPanel.Controls.Add(gainPanel);
+
+        var freqPanel = new Panel();
+
+        var freqLabel = new Label { Text = "Octave: 4", TextAlign = ContentAlignment.MiddleLeft };
+
+        freqPanel.Controls.Add(freqLabel);
 
         var freqBar = new TrackBar
         {
@@ -152,11 +185,14 @@ public class MainForm : Form
         freqBar.Scroll += (o, e) =>
         {
             PianoModel.Frequency = freqBar.Value;
+            freqLabel.Text = $"Octave: {freqBar.Value}";
         };
 
         freqBar.MouseUp += (o, e) => PianoPanel.Focus();
 
-        ModPanel.Controls.Add(freqBar);
+        freqPanel.Controls.Add(freqBar);
+
+        ModPanel.Controls.Add(freqPanel);
 
         Controls.Add(ModPanel);
     }
