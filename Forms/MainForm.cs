@@ -132,19 +132,22 @@ public class MainForm : Form
     {
         MainMenuStrip = MenuBar;
 
-        var fileDropDownButton = new ToolStripDropDownButton() { Text = "File", };
+        var fileDropDownButton = new ToolStripDropDownButton() { Text = "File" };
         var fileDropDown = new ToolStripDropDown();
-        var fileNewMIDI = new ToolStripButton() { Text = "New MIDI Channel (0/16)" };
-        var fileImport = new ToolStripButton() { Text = "Import Audio from ..." };
-        var fileExport = new ToolStripButton() { Text = "Export Audio as ..." };
+        var fileNewMIDI = new ToolStripButton() { Text = "New MIDI Track" };
+        var fileImport = new ToolStripButton() { Text = "Import Track from ..." };
+        var fileExport = new ToolStripButton() { Text = "Export Tracks as ..." };
 
         fileImport.Click += (o, e) =>
         {
             var op = new OpenFileDialog
             {
-                InitialDirectory = "c:\\",
-                Filter = "mp3 files (*.mp3)|*.mp3|WAV files (*.wav)|*.wav|All files (*.*)|*.*",
-                FilterIndex = 0,
+                InitialDirectory = Directory.GetCurrentDirectory(),
+                Filter = "MP3 files (*.mp3)|*.mp3|" +
+                         "WAV files (*.wav)|*.wav|" +
+                         "AIFF files (*.aiff)|*.aiff" +
+                         "All files (*.*)|*.*",
+                FilterIndex = 4,
                 RestoreDirectory = true
             };
 
