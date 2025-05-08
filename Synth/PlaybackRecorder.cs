@@ -4,36 +4,54 @@ namespace WinSynth.Synth;
 
 public class PlaybackRecorder
 {
-    public AudioFileReader Input { get; set; } = new(Filepath);
-    public WaveOutEvent Output { get; set; } = new();
+    public (AudioFileReader, WaveOutEvent)[] Tracks { get; set; } = [];
 
     public bool Playing = false;
 
-    public static string Filepath { get; set; } = "example.mp3";
-
-    public PlaybackRecorder()
+    public void AddTrack(string filepath)
     {
-        Output.Init(Input);
+        var input = new AudioFileReader(filepath);
+        var output = new WaveOutEvent();
+        output.Init(input);
+        Tracks = [.. Tracks, (input, output)];
+    }
+
+    public void RemoveTrack(int i)
+    {
+        if (Tracks.Length < i + 1) return;
+
+        Tracks[i].Item1.Dispose();
+        Tracks[i].Item2.Dispose();
+
+        if (i == 0)
+            Tracks = Tracks[1..];
+        else if (i == Tracks.Length - 1)
+            Tracks = Tracks[..^1];
+        else
+            Tracks = [.. Tracks[..i], .. Tracks[(i + 1)..]];
     }
 
     public void Play()
     {
-        if (!Playing)
+        if (!Playing && Tracks.Length > 0)
         {
-            Output.Play();
+            for (int i = 0; i < Tracks.Length; i++) Tracks[i].Item2.Play();
             Playing = true;
         }
         else
         {
-            Output.Pause();
+            for (int i = 0; i < Tracks.Length; i++) Tracks[i].Item2.Pause();
             Playing = false;
         }
     }
 
     public void Stop()
     {
-        Output.Stop();
-        Input.Position = 0;
+        for (int i = 0; i < Tracks.Length; i++)
+        {
+            Tracks[i].Item2.Stop();
+            Tracks[i].Item1.Position = 0;
+        }
         Playing = false;
     }
 }
