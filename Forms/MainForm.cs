@@ -10,7 +10,9 @@ public class MainForm : Form
     public Panel PlaybackPanel = new();
     public Panel ModPanel = new();
     public Panel PianoPanel = new();
+
     public Piano PianoModel = new();
+    public PlaybackRecorder PlaybackRecorder = new();
 
     public MainForm()
     {
@@ -143,33 +145,46 @@ public class MainForm : Form
     {
         ModPanel.BackColor = SystemColors.ControlLightLight;
 
-        Button[] buttons = [
-            new Button{ Name = "Play", Text = "⏯" },
-            new Button{ Name = "Stop", Text = "⏹" },
-            new Button{ Name = "Record", Text = "⏺" },
-        ];
+        var playButton = new Button { Name = "Play", Text = "⏯" };
+        var stopButton = new Button { Name = "Stop", Text = "⏹" };
+        var recordButton = new Button { Name = "Record", Text = "⏺" };
 
+        var inactiveColor = Color.Transparent;
+        var activeColor = SystemColors.ControlDark;
+
+        Button[] buttons = [playButton, stopButton, recordButton];
         foreach (var button in buttons)
         {
-            button.BackColor = Color.Transparent;
+            button.BackColor = inactiveColor;
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderSize = 0;
-
-            switch (button.Name)
-            {
-                case "Play":
-                    // Play
-                    break;
-                case "Stop":
-                    // Stop
-                    break;
-                case "Record":
-                    // Record
-                    break;
-            }
-
-            PlaybackPanel.Controls.Add(button);
         }
+
+        playButton.Click += (o, e) =>
+        {
+            PlaybackRecorder.Play();
+            playButton.BackColor = activeColor;
+            stopButton.BackColor = inactiveColor;
+            recordButton.BackColor = inactiveColor;
+        };
+
+        stopButton.Click += (o, e) =>
+        {
+            PlaybackRecorder.Stop();
+            playButton.BackColor = inactiveColor;
+            stopButton.BackColor = activeColor;
+            recordButton.BackColor = inactiveColor;
+        };
+
+        recordButton.Click += (o, e) =>
+        {
+            //PlaybackRecorder.Record();
+            playButton.BackColor = inactiveColor;
+            stopButton.BackColor = inactiveColor;
+            recordButton.BackColor = activeColor;
+        };
+
+        PlaybackPanel.Controls.AddRange(buttons);
 
         Controls.Add(PlaybackPanel);
     }

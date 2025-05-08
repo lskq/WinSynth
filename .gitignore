@@ -1,2 +1,4 @@
 bin/
 obj/
+*.mp3
+*.wav
