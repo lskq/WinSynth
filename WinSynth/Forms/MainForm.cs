@@ -30,7 +30,7 @@ public class MainForm : Form
     public void InitializeComponent()
     {
         Text = "WinSynth";
-        MinimumSize = new Size(800, 600);
+        MinimumSize = new Size(854, 480);
 
         InitializeMainMenu();
         InitializeControlPanel();
@@ -98,7 +98,7 @@ public class MainForm : Form
 
     public void ResizePianoPanel()
     {
-        PianoPanel.Size = new Size(ClientSize.Width * 5 / 6, ClientSize.Height * 3 / 5);
+        PianoPanel.Size = new Size(ClientSize.Width / 2, ClientSize.Height * 2 / 5);
         PianoPanel.Location = new Point((ClientSize.Width - PianoPanel.Size.Width) / 2, ClientSize.Height - PianoPanel.Size.Height);
 
         foreach (var control in PianoPanel.Controls)
