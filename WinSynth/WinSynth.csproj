@@ -12,4 +12,8 @@
     <PackageReference Include="Naudio" Version="2.2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\WaveFormRendererLib\WaveFormRendererLib.csproj" />
+  </ItemGroup>
+
 </Project>

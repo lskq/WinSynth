@@ -1,3 +1,4 @@
+using NAudio.WaveFormRenderer;
 using WinSynth.Synth;
 
 namespace WinSynth.Forms;
