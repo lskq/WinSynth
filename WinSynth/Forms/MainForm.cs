@@ -11,6 +11,7 @@ public class MainForm : Form
     public MenuStrip MenuBar = new();
     public Timer TimerTimer = new();
     public Panel ControlPanel = new();
+    public Panel PlaybackPanel = new();
     public Panel PianoPanel = new();
 
     public Piano PianoModel = new();
@@ -24,7 +25,10 @@ public class MainForm : Form
     override protected void OnResize(EventArgs e)
     {
         ResizeControlPanel();
+        ResizePlaybackPanel();
         ResizePianoPanel();
+
+        PianoPanel.Focus();
     }
 
     public void InitializeComponent()
@@ -34,11 +38,10 @@ public class MainForm : Form
 
         InitializeMainMenu();
         InitializeControlPanel();
+        InitializePlaybackPanel();
         InitializePianoPanel();
 
         OnResize(EventArgs.Empty);
-
-        PianoPanel.Focus();
     }
 
     public void ResizeControlPanel()
@@ -96,10 +99,16 @@ public class MainForm : Form
         }
     }
 
+    public void ResizePlaybackPanel()
+    {
+        PlaybackPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 2);
+        PlaybackPanel.Location = new Point(0, MenuBar.Height + ControlPanel.Height);
+    }
+
     public void ResizePianoPanel()
     {
-        PianoPanel.Size = new Size(ClientSize.Width / 2, ClientSize.Height * 2 / 5);
-        PianoPanel.Location = new Point((ClientSize.Width - PianoPanel.Size.Width) / 2, ClientSize.Height - PianoPanel.Size.Height);
+        PianoPanel.Size = new Size(ClientSize.Width / 2, ClientSize.Height - MenuBar.Height - ControlPanel.Height - PlaybackPanel.Height);
+        PianoPanel.Location = new Point((ClientSize.Width - PianoPanel.Size.Width) / 2, MenuBar.Height + ControlPanel.Height + PlaybackPanel.Height);
 
         foreach (var control in PianoPanel.Controls)
         {
@@ -185,7 +194,7 @@ public class MainForm : Form
 
     public void InitializeControlPanel()
     {
-        ControlPanel.BackColor = SystemColors.ControlLight;
+        ControlPanel.BackColor = SystemColors.ControlLightLight;
 
         var timerLabel = new Label { Name = "Timer", Text = "00:00/00:00" };
         ControlPanel.Controls.Add(timerLabel);
@@ -338,6 +347,12 @@ public class MainForm : Form
         ControlPanel.Controls.Add(freqPanel);
 
         Controls.Add(ControlPanel);
+    }
+
+    public void InitializePlaybackPanel()
+    {
+        PlaybackPanel.BackColor = SystemColors.ControlLight;
+        Controls.Add(PlaybackPanel);
     }
 
     public void InitializePianoPanel()
