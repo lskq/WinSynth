@@ -4,6 +4,7 @@ namespace WinSynth.Synth;
 
 public class PlaybackRecorder
 {
+    public (AudioFileReader?, WaveOutEvent?) LongestTrack = (null, null);
     public (AudioFileReader, WaveOutEvent)[] Tracks { get; set; } = [];
 
     public bool Playing = false;
@@ -14,6 +15,8 @@ public class PlaybackRecorder
         var output = new WaveOutEvent();
         output.Init(input);
         Tracks = [.. Tracks, (input, output)];
+
+        SetLongestTrack();
     }
 
     public void RemoveTrack(int i)
@@ -29,6 +32,8 @@ public class PlaybackRecorder
             Tracks = Tracks[..^1];
         else
             Tracks = [.. Tracks[..i], .. Tracks[(i + 1)..]];
+
+        SetLongestTrack();
     }
 
     public void Play()
@@ -53,5 +58,42 @@ public class PlaybackRecorder
             Tracks[i].Item1.Position = 0;
         }
         Playing = false;
+    }
+
+    public TimeSpan GetCurrentTime()
+    {
+        if (LongestTrack.Item1 != null)
+            return LongestTrack.Item1.CurrentTime;
+        else
+            return new TimeSpan(0);
+    }
+
+    public TimeSpan GetTotalTime()
+    {
+        if (LongestTrack.Item1 != null)
+            return LongestTrack.Item1.TotalTime;
+        else
+            return new TimeSpan(0);
+    }
+
+    public void SetLongestTrack()
+    {
+        if (Tracks.Length == 0)
+        {
+            LongestTrack = (null, null);
+        }
+        else
+        {
+            var longest = Tracks[0];
+            foreach (var track in Tracks[1..])
+            {
+                if (track.Item1.TotalTime > longest.Item1.TotalTime)
+                {
+                    longest = track;
+                }
+            }
+
+            LongestTrack = longest;
+        }
     }
 }

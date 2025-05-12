@@ -1,5 +1,5 @@
-using NAudio.WaveFormRenderer;
 using WinSynth.Synth;
+using Timer = System.Windows.Forms.Timer;
 
 namespace WinSynth.Forms;
 
@@ -9,6 +9,7 @@ public class MainForm : Form
     public int KeyHeight => PianoPanel.Size.Height;
 
     public MenuStrip MenuBar = new();
+    public Timer TimerTimer = new();
     public Panel ControlPanel = new();
     public Panel PianoPanel = new();
 
@@ -50,7 +51,18 @@ public class MainForm : Form
             var control = ControlPanel.Controls[i];
             int startX = i == 0 ? 0 : ControlPanel.Controls[i - 1].Location.X + ControlPanel.Controls[i - 1].Width;
 
-            if (control.GetType() == typeof(Button))
+            var type = control.GetType();
+
+
+            if (type == typeof(Label))
+            {
+                control.Size = new Size(ControlPanel.Height * 5 / 2, ControlPanel.Height);
+                control.Location = new Point(startX, ControlPanel.Height / 5);
+
+                var fontSize = control.Height / 3 == 0 ? 1 : control.Height / 3;
+                control.Font = new Font("", fontSize);
+            }
+            else if (type == typeof(Button))
             {
                 control.Size = new Size(ControlPanel.Height, ControlPanel.Height);
                 control.Location = new Point(startX, 0);
@@ -58,11 +70,11 @@ public class MainForm : Form
                 var fontSize = control.Height / 2 == 0 ? 1 : control.Height / 2;
                 control.Font = new Font("", fontSize);
             }
-            else if (control.GetType() == typeof(ComboBox))
+            else if (type == typeof(ComboBox))
             {
                 control.Location = new Point(startX, ControlPanel.Height / 4);
             }
-            else if (control.GetType() == typeof(Panel))
+            else if (type == typeof(Panel))
             {
                 int width = ControlPanel.Width / 6;
 
@@ -146,7 +158,7 @@ public class MainForm : Form
                 InitialDirectory = Directory.GetCurrentDirectory(),
                 Filter = "MP3 files (*.mp3)|*.mp3|" +
                          "WAV files (*.wav)|*.wav|" +
-                         "AIFF files (*.aiff)|*.aiff" +
+                         "AIFF files (*.aiff)|*.aiff|" +
                          "All files (*.*)|*.*",
                 FilterIndex = 4,
                 RestoreDirectory = true
@@ -156,6 +168,7 @@ public class MainForm : Form
             {
                 var filepath = op.FileName;
                 PlaybackRecorder.AddTrack(filepath);
+                TimerTimer.Start();
             }
             ;
         };
@@ -173,6 +186,24 @@ public class MainForm : Form
     public void InitializeControlPanel()
     {
         ControlPanel.BackColor = SystemColors.ControlLight;
+
+        var timerLabel = new Label { Name = "Timer", Text = "00:00/00:00" };
+        ControlPanel.Controls.Add(timerLabel);
+
+        TimerTimer.Interval = 1000;
+        TimerTimer.Tick += (o, e) =>
+        {
+            var maxTimeSpan = PlaybackRecorder.GetTotalTime();
+            var currentTimeSpan = PlaybackRecorder.GetCurrentTime();
+
+            timerLabel.Text = $"{currentTimeSpan.Minutes:00}:{currentTimeSpan.Seconds:00}/{maxTimeSpan.Minutes:00}:{maxTimeSpan.Seconds:00}";
+
+            if (!PlaybackRecorder.Playing)
+            {
+                TimerTimer.Stop();
+                return;
+            }
+        };
 
         var playButton = new Button { Name = "Play", Text = "⏯" };
         var stopButton = new Button { Name = "Stop", Text = "⏹" };
@@ -192,6 +223,7 @@ public class MainForm : Form
         playButton.Click += (o, e) =>
         {
             PlaybackRecorder.Play();
+            TimerTimer.Start();
 
             playButton.BackColor = activeColor;
             stopButton.BackColor = inactiveColor;
@@ -203,6 +235,7 @@ public class MainForm : Form
         stopButton.Click += (o, e) =>
         {
             PlaybackRecorder.Stop();
+            TimerTimer.Start();
 
             playButton.BackColor = inactiveColor;
             stopButton.BackColor = activeColor;
