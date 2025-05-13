@@ -109,6 +109,23 @@ public class MainForm : Form
             Control control = PlaybackPanel.Controls[i];
             control.Size = new Size(ClientSize.Width, PlaybackPanel.Height / 3);
             control.Location = new Point(0, i * PlaybackPanel.Height / 3);
+
+            foreach (Control subcontrol in control.Controls)
+            {
+                subcontrol.Location = new Point(0, 0);
+
+                if (subcontrol.GetType() == typeof(Button))
+                {
+                    subcontrol.Size = new Size(control.Height / 3, control.Height / 3);
+
+                    var fontSize = control.Height / 6 == 0 ? 1 : control.Height / 6;
+                    subcontrol.Font = new Font("", fontSize);
+                }
+                else if (subcontrol.GetType() == typeof(PictureBox))
+                {
+                    subcontrol.Size = new Size(control.Width, control.Height);
+                }
+            }
         }
     }
 
@@ -487,8 +504,8 @@ public class MainForm : Form
             var trackImage = Visualizer.Visualize(trackFile);
 
             var panel = new Panel { Tag = i };
-            var picture = new PictureBox { Image = trackImage };
-            var button = new Button { Text = "X" };
+            var picture = new PictureBox { Image = trackImage, SizeMode = PictureBoxSizeMode.StretchImage, BorderStyle = BorderStyle.Fixed3D };
+            var button = new Button { Text = "X", TextAlign = ContentAlignment.MiddleCenter };
 
             button.Click += (o, e) =>
             {
@@ -503,6 +520,9 @@ public class MainForm : Form
 
             PlaybackPanel.Controls.Add(panel);
         }
+
+        PlaybackRecorder.Stop();
+        TimerTimer.Start();
 
         ResizePlaybackPanel();
     }
