@@ -103,6 +103,13 @@ public class MainForm : Form
     {
         PlaybackPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 2);
         PlaybackPanel.Location = new Point(0, MenuBar.Height + ControlPanel.Height);
+
+        for (int i = 0; i < PlaybackPanel.Controls.Count; i++)
+        {
+            Control control = PlaybackPanel.Controls[i];
+            control.Size = new Size(ClientSize.Width, PlaybackPanel.Height / 3);
+            control.Location = new Point(0, i * PlaybackPanel.Height / 3);
+        }
     }
 
     public void ResizePianoPanel()
@@ -178,8 +185,9 @@ public class MainForm : Form
                 var filepath = op.FileName;
                 PlaybackRecorder.AddTrack(filepath);
                 TimerTimer.Start();
+
+                UpdatePlaybackPanel();
             }
-            ;
         };
 
         fileDropDownButton.DropDown = fileDropDown;
@@ -352,6 +360,7 @@ public class MainForm : Form
     public void InitializePlaybackPanel()
     {
         PlaybackPanel.BackColor = SystemColors.ControlLight;
+        PlaybackPanel.AutoScroll = true;
         Controls.Add(PlaybackPanel);
     }
 
@@ -466,5 +475,35 @@ public class MainForm : Form
         }
 
         Controls.Add(PianoPanel);
+    }
+
+    public void UpdatePlaybackPanel()
+    {
+        PlaybackPanel.Controls.Clear();
+
+        for (int i = 0; i < PlaybackRecorder.Tracks.Length; i++)
+        {
+            var trackFile = PlaybackRecorder.Tracks[i].Item1; ;
+            var trackImage = Visualizer.Visualize(trackFile);
+
+            var panel = new Panel { Tag = i };
+            var picture = new PictureBox { Image = trackImage };
+            var button = new Button { Text = "X" };
+
+            button.Click += (o, e) =>
+            {
+                PlaybackRecorder.RemoveTrack((int)panel.Tag);
+
+                UpdatePlaybackPanel();
+            };
+
+            panel.Controls.AddRange([button, picture]);
+
+            picture.Dock = DockStyle.Fill;
+
+            PlaybackPanel.Controls.Add(panel);
+        }
+
+        ResizePlaybackPanel();
     }
 }
