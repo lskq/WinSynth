@@ -5,15 +5,7 @@ namespace WinSynth.Forms;
 
 public class MainForm : Form
 {
-    public int KeyWidth => PianoPanel.Size.Width / 7;
-    public int KeyHeight => PianoPanel.Size.Height;
-
-    public MenuStrip MenuBar = new();
-    public Timer TimerTimer = new();
-    public Panel ControlPanel = new();
-    public Panel PlaybackPanel = new();
-    public Panel PianoPanel = new();
-
+    public Timer Timer = new() { Interval = 1000 };
     public Piano PianoModel = new();
     public PlaybackRecorder PlaybackRecorder = new();
 
@@ -22,281 +14,292 @@ public class MainForm : Form
         InitializeComponent();
     }
 
-    override protected void OnResize(EventArgs e)
+    public void ImportButton_Click(object? sender, EventArgs e)
     {
-        ResizeControlPanel();
-        ResizePlaybackPanel();
-        ResizePianoPanel();
+        var op = new OpenFileDialog
+        {
+            InitialDirectory = Directory.GetCurrentDirectory(),
+            Filter = "MP3 files (*.mp3)|*.mp3|" +
+                     "WAV files (*.wav)|*.wav|" +
+                     "AIFF files (*.aiff)|*.aiff|" +
+                     "All files (*.*)|*.*",
+            FilterIndex = 4,
+            RestoreDirectory = true
+        };
 
-        PianoPanel.Focus();
+        if (op.ShowDialog() == DialogResult.OK)
+        {
+            var filepath = op.FileName;
+            PlaybackRecorder.AddTrack(filepath);
+            Timer.Start();
+
+            UpdatePlaybackPanel();
+        }
+    }
+
+    public void FreqTrackbar_Scroll(object? sender, EventArgs e)
+    {
+        if (sender == null) return;
+        var freqTrackbar = (TrackBar)sender;
+
+        PianoModel.Frequency = freqTrackbar.Value;
+        Controls.Find("FreqLabel", true)[0].Text = $"Octave: {freqTrackbar.Value}";
+    }
+
+    public void GainTrackbar_Scroll(object? sender, EventArgs e)
+    {
+        if (sender == null) return;
+        var gainTrackbar = (TrackBar)sender;
+        var gain = gainTrackbar.Value / 10d;
+
+        PianoModel.Gain = gain;
+        Controls.Find("GainLabel", true)[0].Text = $"Gain: {gain:0.0}";
+    }
+
+    public void PianoCombobox_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (sender == null) return;
+        var pianoCombobox = (ComboBox)sender;
+
+        PianoModel.Mode = pianoCombobox.SelectedIndex;
+    }
+
+    public void PlayButton_Click(object? sender, EventArgs e)
+    {
+        PlaybackRecorder.Play();
+        Timer.Start();
+    }
+
+    public void StopButton_Click(object? sender, EventArgs e)
+    {
+        PlaybackRecorder.Stop();
+        Timer.Start();
+    }
+
+    public void RecordButton_Click(object? sender, EventArgs e)
+    {
+        //PlaybackRecorder.Record();
+    }
+
+    public void Timer_Tick(object? sender, EventArgs e)
+    {
+        if (sender == null) return;
+        var timer = (Timer)sender;
+
+        var maxTimeSpan = PlaybackRecorder.GetTotalTime();
+        var currentTimeSpan = PlaybackRecorder.GetCurrentTime();
+
+        Controls.Find("TimerLabel", true)[0].Text = $"{currentTimeSpan.Minutes:00}:{currentTimeSpan.Seconds:00}/{maxTimeSpan.Minutes:00}:{maxTimeSpan.Seconds:00}";
+
+        if (!PlaybackRecorder.Playing)
+        {
+            timer.Stop();
+            return;
+        }
+    }
+
+    public void PianoKey_MouseDown(object? sender, MouseEventArgs e)
+    {
+        if (sender == null) return;
+        var pianoKey = (Button)sender;
+        PianoModel_PlayNote(pianoKey);
+    }
+
+    public void PianoKey_MouseUp(object? sender, MouseEventArgs e)
+    {
+        if (sender == null) return;
+        var pianoKey = (Button)sender;
+        PianoModel_StopNote(pianoKey);
+    }
+
+    public void PianoKey_GotFocus(object? sender, EventArgs e)
+    {
+        if (sender == null) return;
+        var pianoKey = (Button)sender;
+        if (pianoKey.Parent != null)
+            pianoKey.Parent.Focus();
+    }
+
+    public void PianoPanel_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (sender == null) return;
+
+        var pianoPanel = (Panel)sender;
+
+        foreach (var control in pianoPanel.Controls)
+        {
+            if (control.GetType() == typeof(Button))
+            {
+                var button = (Button)control;
+                if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
+                {
+                    PianoModel_PlayNote(button);
+                }
+            }
+        }
+    }
+
+    public void PianoPanel_KeyUp(object? sender, KeyEventArgs e)
+    {
+        if (sender == null) return;
+
+        var pianoPanel = (Panel)sender;
+
+        foreach (var control in pianoPanel.Controls)
+        {
+            if (control.GetType() == typeof(Button))
+            {
+                var button = (Button)control;
+                if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
+                {
+                    PianoModel_StopNote(button);
+                }
+            }
+        }
+    }
+
+    public void PianoModel_PlayNote(Button button)
+    {
+        button.BackColor = Color.FromArgb(255, 255, 0);
+        button.ForeColor = Color.FromArgb(15, 15, 15);
+
+        PianoModel.Play(button.TabIndex);
+    }
+
+    public void PianoModel_StopNote(Button button)
+    {
+        if (button.Name.Length == 1)
+        {
+            button.BackColor = Color.FromArgb(255, 255, 255);
+            button.ForeColor = Color.FromArgb(15, 15, 15);
+        }
+        else
+        {
+            button.BackColor = Color.FromArgb(15, 15, 15);
+            button.ForeColor = Color.FromArgb(255, 255, 255);
+        }
+
+        PianoModel.Stop(button.TabIndex);
+    }
+
+    public void UpdatePlaybackPanel()
+    {
+        var playbackPanel = Controls.Find("PlaybackPanel", true)[0];
+
+        playbackPanel.Controls.Clear();
+
+        for (int i = 0; i < PlaybackRecorder.Tracks.Length; i++)
+        {
+            var trackFile = PlaybackRecorder.Tracks[i].Item1; ;
+            var trackImage = Visualizer.Visualize(trackFile);
+
+            var trackPictureBox = new PictureBox
+            {
+                Image = trackImage,
+                Name = $"Track {i}",
+                Tag = i,
+            };
+
+            var trackCloseButton = new Button
+            {
+                Size = new Size(ClientSize.Height / 20, ClientSize.Height / 20),
+                Text = "X",
+                TextAlign = ContentAlignment.MiddleCenter,
+            };
+
+            trackCloseButton.Click += (o, e) =>
+            {
+                PlaybackRecorder.RemoveTrack((int)trackPictureBox.Tag);
+
+                UpdatePlaybackPanel();
+            };
+
+            trackPictureBox.Controls.Add(trackCloseButton);
+
+            trackPictureBox.Location = new Point(0, trackPictureBox.Height * i);
+
+            playbackPanel.Controls.Add(trackPictureBox);
+        }
+
+        PlaybackRecorder.Stop();
+        Timer.Start();
     }
 
     public void InitializeComponent()
     {
+        // Init Form
         Text = "WinSynth";
-        MinimumSize = new Size(854, 480);
+        AutoScaleMode = AutoScaleMode.Font;
+        ClientSize = new Size(854, 480);
 
-        InitializeMainMenu();
-        InitializeControlPanel();
-        InitializePlaybackPanel();
-        InitializePianoPanel();
+        // Init Timer
+        Timer.Tick += Timer_Tick;
 
-        OnResize(EventArgs.Empty);
-    }
-
-    public void ResizeControlPanel()
-    {
-        ControlPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 16);
-        ControlPanel.Location = new Point(0, MenuBar.Height);
-
-        for (int i = 0; i < ControlPanel.Controls.Count; i++)
-        {
-            var control = ControlPanel.Controls[i];
-            int startX = i == 0 ? 0 : ControlPanel.Controls[i - 1].Location.X + ControlPanel.Controls[i - 1].Width;
-
-            var type = control.GetType();
-
-
-            if (type == typeof(Label))
-            {
-                control.Size = new Size(ControlPanel.Height * 5 / 2, ControlPanel.Height);
-                control.Location = new Point(startX, ControlPanel.Height / 5);
-
-                var fontSize = control.Height / 3 == 0 ? 1 : control.Height / 3;
-                control.Font = new Font("", fontSize);
-            }
-            else if (type == typeof(Button))
-            {
-                control.Size = new Size(ControlPanel.Height, ControlPanel.Height);
-                control.Location = new Point(startX, 0);
-
-                var fontSize = control.Height / 2 == 0 ? 1 : control.Height / 2;
-                control.Font = new Font("", fontSize);
-            }
-            else if (type == typeof(ComboBox))
-            {
-                control.Location = new Point(startX, ControlPanel.Height / 4);
-            }
-            else if (type == typeof(Panel))
-            {
-                int width = ControlPanel.Width / 6;
-
-
-                control.Size = new Size(width, ControlPanel.Height);
-                control.Location = new Point(startX, 0);
-
-                for (int j = 0; j < control.Controls.Count; j++)
-                {
-                    var subcontrol = control.Controls[j];
-
-                    subcontrol.Size = new Size(control.Width, control.Height / 2);
-                    subcontrol.Location = new Point(0, control.Height * j * 2 / 4);
-
-                    var fontSize = control.Height / 4 == 0 ? 1 : control.Height / 4;
-                    subcontrol.Font = new Font("", fontSize);
-                }
-            }
-        }
-    }
-
-    public void ResizePlaybackPanel()
-    {
-        PlaybackPanel.Size = new Size(ClientSize.Width, ClientSize.Height / 2);
-        PlaybackPanel.Location = new Point(0, MenuBar.Height + ControlPanel.Height);
-
-        for (int i = 0; i < PlaybackPanel.Controls.Count; i++)
-        {
-            Control control = PlaybackPanel.Controls[i];
-            control.Size = new Size(ClientSize.Width, PlaybackPanel.Height / 3);
-            control.Location = new Point(0, i * PlaybackPanel.Height / 3);
-
-            foreach (Control subcontrol in control.Controls)
-            {
-                subcontrol.Location = new Point(0, 0);
-
-                if (subcontrol.GetType() == typeof(Button))
-                {
-                    subcontrol.Size = new Size(control.Height / 3, control.Height / 3);
-
-                    var fontSize = control.Height / 6 == 0 ? 1 : control.Height / 6;
-                    subcontrol.Font = new Font("", fontSize);
-                }
-                else if (subcontrol.GetType() == typeof(PictureBox))
-                {
-                    subcontrol.Size = new Size(control.Width, control.Height);
-                }
-            }
-        }
-    }
-
-    public void ResizePianoPanel()
-    {
-        PianoPanel.Size = new Size(ClientSize.Width / 2, ClientSize.Height - MenuBar.Height - ControlPanel.Height - PlaybackPanel.Height);
-        PianoPanel.Location = new Point((ClientSize.Width - PianoPanel.Size.Width) / 2, MenuBar.Height + ControlPanel.Height + PlaybackPanel.Height);
-
-        foreach (var control in PianoPanel.Controls)
-        {
-            var button = (Button)control;
-
-            if (button.Name.Length == 1)
-            {
-                button.Width = KeyWidth;
-                button.Height = KeyHeight;
-
-                var fontSize = KeyHeight / 10 == 0 ? 1 : KeyHeight / 10;
-                button.Font = new Font("", fontSize);
-            }
-            else
-            {
-                button.Width = KeyWidth / 2;
-                button.Height = KeyHeight * 3 / 4;
-
-                var fontSize = KeyHeight / 20 == 0 ? 1 : KeyHeight / 20;
-                button.Font = new Font("", fontSize);
-            }
-
-            button.Location = button.Name switch
-            {
-                "C" => new Point(0, 0),
-                "C#" => new Point(KeyWidth * 3 / 4, 0),
-                "D" => new Point(KeyWidth, 0),
-                "D#" => new Point(KeyWidth * 7 / 4, 0),
-                "E" => new Point(KeyWidth * 2, 0),
-                "F" => new Point(KeyWidth * 3, 0),
-                "F#" => new Point(KeyWidth * 15 / 4, 0),
-                "G" => new Point(KeyWidth * 4, 0),
-                "G#" => new Point(KeyWidth * 19 / 4, 0),
-                "A" => new Point(KeyWidth * 5, 0),
-                "A#" => new Point(KeyWidth * 23 / 4, 0),
-                "B" => new Point(KeyWidth * 6, 0),
-                _ => throw new Exception()
-            };
-        }
-    }
-
-    public void InitializeMainMenu()
-    {
-        MainMenuStrip = MenuBar;
+        // Init Menu Strip
+        MainMenuStrip = new MenuStrip();
 
         var fileDropDownButton = new ToolStripDropDownButton() { Text = "File" };
         var fileDropDown = new ToolStripDropDown();
-        var fileNewMIDI = new ToolStripButton() { Text = "New MIDI Track" };
-        var fileImport = new ToolStripButton() { Text = "Import Track from ..." };
-        var fileExport = new ToolStripButton() { Text = "Export Tracks as ..." };
+        var newMIDIButton = new ToolStripButton() { Text = "New MIDI Track" };
+        var importButton = new ToolStripButton() { Text = "Import Track from ..." };
+        var exportButton = new ToolStripButton() { Text = "Export Tracks as ..." };
 
-        fileImport.Click += (o, e) =>
-        {
-            var op = new OpenFileDialog
-            {
-                InitialDirectory = Directory.GetCurrentDirectory(),
-                Filter = "MP3 files (*.mp3)|*.mp3|" +
-                         "WAV files (*.wav)|*.wav|" +
-                         "AIFF files (*.aiff)|*.aiff|" +
-                         "All files (*.*)|*.*",
-                FilterIndex = 4,
-                RestoreDirectory = true
-            };
-
-            if (op.ShowDialog() == DialogResult.OK)
-            {
-                var filepath = op.FileName;
-                PlaybackRecorder.AddTrack(filepath);
-                TimerTimer.Start();
-
-                UpdatePlaybackPanel();
-            }
-        };
+        importButton.Click += ImportButton_Click;
 
         fileDropDownButton.DropDown = fileDropDown;
         fileDropDownButton.ShowDropDownArrow = false;
 
-        fileDropDown.Items.AddRange([fileNewMIDI, fileImport, fileExport]);
+        fileDropDown.Items.AddRange([newMIDIButton, importButton, exportButton]);
 
-        MenuBar.Items.Add(fileDropDownButton);
+        MainMenuStrip.Items.Add(fileDropDownButton);
 
-        Controls.Add(MenuBar);
-    }
+        Controls.Add(MainMenuStrip);
 
-    public void InitializeControlPanel()
-    {
-        ControlPanel.BackColor = SystemColors.ControlLightLight;
-
-        var timerLabel = new Label { Name = "Timer", Text = "00:00/00:00" };
-        ControlPanel.Controls.Add(timerLabel);
-
-        TimerTimer.Interval = 1000;
-        TimerTimer.Tick += (o, e) =>
+        // Init Playback Bar
+        var playbackBar = new Panel
         {
-            var maxTimeSpan = PlaybackRecorder.GetTotalTime();
-            var currentTimeSpan = PlaybackRecorder.GetCurrentTime();
-
-            timerLabel.Text = $"{currentTimeSpan.Minutes:00}:{currentTimeSpan.Seconds:00}/{maxTimeSpan.Minutes:00}:{maxTimeSpan.Seconds:00}";
-
-            if (!PlaybackRecorder.Playing)
-            {
-                TimerTimer.Stop();
-                return;
-            }
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+            BackColor = SystemColors.ControlLightLight,
+            Location = new Point(0, ClientSize.Height / 20),
+            Size = new Size(ClientSize.Width, ClientSize.Height / 20),
         };
 
-        var playButton = new Button { Name = "Play", Text = "⏯" };
-        var stopButton = new Button { Name = "Stop", Text = "⏹" };
-        var recordButton = new Button { Name = "Record", Text = "⏺" };
+        Controls.Add(playbackBar);
 
-        var inactiveColor = Color.Transparent;
-        var activeColor = SystemColors.ControlDark;
-
-        Button[] buttons = [playButton, stopButton, recordButton];
-        foreach (var button in buttons)
+        var timerLabel = new Label
         {
-            button.BackColor = inactiveColor;
+            Dock = DockStyle.Left,
+            Name = "TimerLabel",
+            Text = "00:00/00:00",
+            TextAlign = ContentAlignment.MiddleCenter,
+            Size = new Size(playbackBar.Width / 12, playbackBar.Height),
+        };
+
+        var playButton = new Button { Name = "PlayButton", Text = "⏯" };
+        var stopButton = new Button { Name = "StopButton", Text = "⏹" };
+        var recordButton = new Button { Name = "RecordButton", Text = "⏺" };
+
+        Button[] playbackButtons = [recordButton, stopButton, playButton];
+        foreach (var button in playbackButtons)
+        {
+            button.BackColor = Color.Transparent;
+            button.Dock = DockStyle.Left;
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderSize = 0;
+            button.Size = new Size(playbackBar.Height, playbackBar.Height);
         }
 
-        playButton.Click += (o, e) =>
+        playButton.Click += PlayButton_Click;
+        stopButton.Click += StopButton_Click;
+        recordButton.Click += RecordButton_Click;
+
+        var pianoCombobox = new ComboBox
         {
-            PlaybackRecorder.Play();
-            TimerTimer.Start();
-
-            playButton.BackColor = activeColor;
-            stopButton.BackColor = inactiveColor;
-            recordButton.BackColor = inactiveColor;
-
-            PianoPanel.Focus();
-        };
-
-        stopButton.Click += (o, e) =>
-        {
-            PlaybackRecorder.Stop();
-            TimerTimer.Start();
-
-            playButton.BackColor = inactiveColor;
-            stopButton.BackColor = activeColor;
-            recordButton.BackColor = inactiveColor;
-
-            PianoPanel.Focus();
-        };
-
-        recordButton.Click += (o, e) =>
-        {
-            //PlaybackRecorder.Record();
-
-            playButton.BackColor = inactiveColor;
-            stopButton.BackColor = inactiveColor;
-            recordButton.BackColor = activeColor;
-
-            PianoPanel.Focus();
-        };
-
-        ControlPanel.Controls.AddRange(buttons);
-
-        var dropdown = new ComboBox
-        {
+            Dock = DockStyle.Left,
             DropDownStyle = ComboBoxStyle.DropDownList,
         };
 
-        dropdown.Items.AddRange
+        pianoCombobox.Items.AddRange
         ([
             "MIDI",
             "Sine",
@@ -307,136 +310,92 @@ public class MainForm : Form
             "White Noise"
         ]);
 
-        dropdown.SelectedIndex = 0;
+        pianoCombobox.SelectedIndex = 0;
 
-        dropdown.SelectedIndexChanged += (o, e) =>
+        pianoCombobox.SelectedIndexChanged += PianoCombobox_SelectedIndexChanged;
+
+        var gainPanel = new Panel
         {
-            PianoModel.Mode = dropdown.SelectedIndex;
-            PianoPanel.Focus();
+            Dock = DockStyle.Left,
+            Size = new Size(playbackBar.Width / 10, playbackBar.Height),
         };
 
-        ControlPanel.Controls.Add(dropdown);
-
-        var gainPanel = new Panel();
-
-        var gainLabel = new Label { Text = "Gain: 0.5", TextAlign = ContentAlignment.MiddleCenter };
+        var gainLabel = new Label
+        {
+            Name = "GainLabel",
+            Text = "Gain: 0.5",
+            TextAlign = ContentAlignment.MiddleCenter,
+            Location = new Point(0, 0),
+            Size = new Size(gainPanel.Width, gainPanel.Height / 2),
+        };
 
         gainPanel.Controls.Add(gainLabel);
 
-        var gainBar = new TrackBar
+        var gainTrackbar = new TrackBar
         {
             Minimum = 0,
             Maximum = 10,
             Value = 5,
-            TickFrequency = 1
+            TickFrequency = 1,
+            Location = new Point(0, gainPanel.Height / 2),
+            Size = new Size(gainPanel.Width, gainPanel.Height / 2),
         };
 
-        gainBar.Scroll += (o, e) =>
+        gainTrackbar.Scroll += GainTrackbar_Scroll;
+
+        gainPanel.Controls.Add(gainTrackbar);
+
+        var freqPanel = new Panel
         {
-            var gain = gainBar.Value / 10d;
-
-            PianoModel.Gain = gain;
-            gainLabel.Text = $"Gain: {gain:0.0}";
+            Dock = DockStyle.Left,
+            Size = new Size(playbackBar.Width / 10, playbackBar.Height),
         };
 
-        gainBar.MouseUp += (o, e) => PianoPanel.Focus();
-
-        gainPanel.Controls.Add(gainBar);
-
-        ControlPanel.Controls.Add(gainPanel);
-
-        var freqPanel = new Panel();
-
-        var freqLabel = new Label { Text = "Octave: 4", TextAlign = ContentAlignment.MiddleCenter };
+        var freqLabel = new Label
+        {
+            Name = "FreqLabel",
+            Text = "Octave: 4",
+            TextAlign = ContentAlignment.MiddleCenter,
+            Location = new Point(0, 0),
+            Size = new Size(freqPanel.Width, freqPanel.Height / 2),
+        };
 
         freqPanel.Controls.Add(freqLabel);
 
-        var freqBar = new TrackBar
+        var freqTrackbar = new TrackBar
         {
             Minimum = 0,
             Maximum = 8,
             Value = 4,
-            TickFrequency = 1
+            TickFrequency = 1,
+            Location = new Point(0, freqPanel.Height / 2),
+            Size = new Size(freqPanel.Width, freqPanel.Height / 2),
         };
 
-        freqBar.Scroll += (o, e) =>
+        freqTrackbar.Scroll += FreqTrackbar_Scroll;
+
+        freqPanel.Controls.Add(freqTrackbar);
+
+        playbackBar.Controls.Add(freqPanel);
+        playbackBar.Controls.Add(gainPanel);
+        playbackBar.Controls.Add(pianoCombobox);
+        playbackBar.Controls.AddRange(playbackButtons);
+        playbackBar.Controls.Add(timerLabel);
+
+        // Init Piano Panel
+        var pianoPanel = new Panel
         {
-            PianoModel.Frequency = freqBar.Value;
-            freqLabel.Text = $"Octave: {freqBar.Value}";
+            Anchor = AnchorStyles.Bottom,
+            Location = new Point(ClientSize.Width / 3, ClientSize.Height * 2 / 3),
+            Size = new Size(ClientSize.Width / 3, ClientSize.Height / 3)
         };
 
-        freqBar.MouseUp += (o, e) => PianoPanel.Focus();
+        pianoPanel.KeyDown += PianoPanel_KeyDown;
+        pianoPanel.KeyUp += PianoPanel_KeyUp;
 
-        freqPanel.Controls.Add(freqBar);
+        Controls.Add(pianoPanel);
 
-        ControlPanel.Controls.Add(freqPanel);
-
-        Controls.Add(ControlPanel);
-    }
-
-    public void InitializePlaybackPanel()
-    {
-        PlaybackPanel.BackColor = SystemColors.ControlLight;
-        PlaybackPanel.AutoScroll = true;
-        Controls.Add(PlaybackPanel);
-    }
-
-    public void InitializePianoPanel()
-    {
-        void Down(Button button)
-        {
-            button.BackColor = Color.FromArgb(255, 255, 0);
-            button.ForeColor = Color.FromArgb(15, 15, 15);
-
-            PianoModel.Play(button.TabIndex);
-        }
-
-        void Up(Button button)
-        {
-            if (button.Name.Length == 1)
-            {
-                button.BackColor = Color.FromArgb(255, 255, 255);
-                button.ForeColor = Color.FromArgb(15, 15, 15);
-            }
-            else
-            {
-                button.BackColor = Color.FromArgb(15, 15, 15);
-                button.ForeColor = Color.FromArgb(255, 255, 255);
-            }
-
-            PianoModel.Stop(button.TabIndex);
-        }
-
-        PianoPanel.KeyDown += (s, e) =>
-        {
-            foreach (var control in PianoPanel.Controls)
-            {
-                if (control.GetType() == typeof(Button))
-                {
-                    var button = (Button)control;
-                    if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
-                    {
-                        Down(button);
-                    }
-                }
-            }
-        };
-
-        PianoPanel.KeyUp += (s, e) =>
-        {
-            foreach (var control in PianoPanel.Controls)
-            {
-                if (control.GetType() == typeof(Button))
-                {
-                    var button = (Button)control;
-                    if (button.Tag != null && e.KeyCode == (Keys)button.Tag)
-                    {
-                        Up(button);
-                    }
-                }
-            }
-        };
-
+        // Init Piano Keys
         Button[] blackKeys = [];
 
         (string, string, Keys)[] keyData =
@@ -458,32 +417,73 @@ public class MainForm : Form
 
         for (int i = 0; i < 12; i++)
         {
-            var button = new Button
+            var pianoKey = new Button
             {
                 TabIndex = i,
                 Name = keyData[i].Item1,
                 Text = keyData[i].Item2,
                 Tag = keyData[i].Item3,
                 TextAlign = ContentAlignment.BottomCenter,
+                FlatStyle = FlatStyle.Flat,
             };
 
-            button.MouseDown += (s, e) => Down(button);
-            button.MouseUp += (s, e) => Up(button);
-            button.GotFocus += (s, e) => PianoPanel.Focus();
+            pianoKey.FlatAppearance.BorderSize = 1;
 
-            if (button.Name.Length == 1)
+            pianoKey.MouseDown += PianoKey_MouseDown;
+            pianoKey.MouseUp += PianoKey_MouseUp;
+            pianoKey.GotFocus += PianoKey_GotFocus;
+
+            if (pianoKey.Name.Length == 1)
             {
-                button.BackColor = Color.FromArgb(255, 255, 255);
-                button.ForeColor = Color.FromArgb(15, 15, 15);
+                pianoKey.BackColor = Color.FromArgb(255, 255, 255);
+                pianoKey.ForeColor = Color.FromArgb(15, 15, 15);
             }
             else
             {
-                button.BackColor = Color.FromArgb(15, 15, 15);
-                button.ForeColor = Color.FromArgb(255, 255, 255);
-                blackKeys = [.. blackKeys, button];
+                pianoKey.BackColor = Color.FromArgb(15, 15, 15);
+                pianoKey.ForeColor = Color.FromArgb(255, 255, 255);
+                pianoKey.FlatAppearance.BorderColor = Color.FromArgb(15, 15, 15);
+                blackKeys = [.. blackKeys, pianoKey];
             }
 
-            PianoPanel.Controls.Add(button);
+            var KeyWidth = pianoPanel.Size.Width / 7;
+            var KeyHeight = pianoPanel.Size.Height;
+
+            if (pianoKey.Name.Length == 1)
+            {
+                pianoKey.Width = KeyWidth;
+                pianoKey.Height = KeyHeight;
+
+                var fontSize = KeyHeight / 10 == 0 ? 1 : KeyHeight / 10;
+                pianoKey.Font = new Font("", fontSize);
+            }
+            else
+            {
+                pianoKey.Width = KeyWidth / 2;
+                pianoKey.Height = KeyHeight * 3 / 4;
+
+                var fontSize = KeyHeight / 20 == 0 ? 1 : KeyHeight / 20;
+                pianoKey.Font = new Font("", fontSize);
+            }
+
+            pianoKey.Location = pianoKey.Name switch
+            {
+                "C" => new Point(0, 0),
+                "C#" => new Point(KeyWidth * 3 / 4, 0),
+                "D" => new Point(KeyWidth, 0),
+                "D#" => new Point(KeyWidth * 7 / 4, 0),
+                "E" => new Point(KeyWidth * 2, 0),
+                "F" => new Point(KeyWidth * 3, 0),
+                "F#" => new Point(KeyWidth * 15 / 4, 0),
+                "G" => new Point(KeyWidth * 4, 0),
+                "G#" => new Point(KeyWidth * 19 / 4, 0),
+                "A" => new Point(KeyWidth * 5, 0),
+                "A#" => new Point(KeyWidth * 23 / 4, 0),
+                "B" => new Point(KeyWidth * 6, 0),
+                _ => throw new Exception()
+            };
+
+            pianoPanel.Controls.Add(pianoKey);
         }
 
         foreach (var key in blackKeys)
@@ -491,39 +491,17 @@ public class MainForm : Form
             key.BringToFront();
         }
 
-        Controls.Add(PianoPanel);
-    }
-
-    public void UpdatePlaybackPanel()
-    {
-        PlaybackPanel.Controls.Clear();
-
-        for (int i = 0; i < PlaybackRecorder.Tracks.Length; i++)
+        // Init Playback Panel
+        var PlaybackPanel = new Panel
         {
-            var trackFile = PlaybackRecorder.Tracks[i].Item1; ;
-            var trackImage = Visualizer.Visualize(trackFile);
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+            AutoScroll = true,
+            BackColor = SystemColors.ControlLight,
+            Name = "PlaybackPanel",
+            Location = new Point(0, MainMenuStrip.Height + playbackBar.Height),
+            Size = new Size(ClientSize.Width, ClientSize.Height - MainMenuStrip.Height - playbackBar.Height - pianoPanel.Height),
+        };
 
-            var panel = new Panel { Tag = i };
-            var picture = new PictureBox { Image = trackImage, SizeMode = PictureBoxSizeMode.StretchImage, BorderStyle = BorderStyle.Fixed3D };
-            var button = new Button { Text = "X", TextAlign = ContentAlignment.MiddleCenter };
-
-            button.Click += (o, e) =>
-            {
-                PlaybackRecorder.RemoveTrack((int)panel.Tag);
-
-                UpdatePlaybackPanel();
-            };
-
-            panel.Controls.AddRange([button, picture]);
-
-            picture.Dock = DockStyle.Fill;
-
-            PlaybackPanel.Controls.Add(panel);
-        }
-
-        PlaybackRecorder.Stop();
-        TimerTimer.Start();
-
-        ResizePlaybackPanel();
+        Controls.Add(PlaybackPanel);
     }
 }
