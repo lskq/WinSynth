@@ -198,6 +198,7 @@ public class MainForm : Form
                 Image = trackImage,
                 Name = $"Track {i}",
                 Tag = i,
+                Size = trackImage.Size,
             };
 
             var trackCloseButton = new Button

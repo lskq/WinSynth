@@ -18,9 +18,9 @@ public static class Visualizer
 
         var myRendererSettings = new StandardWaveFormRendererSettings
         {
-            Width = 640,
-            TopHeight = 32,
-            BottomHeight = 32
+            Width = (int)audioFile.TotalTime.TotalSeconds * 6,
+            TopHeight = 48,
+            BottomHeight = 48
         };
 
         var renderer = new WaveFormRenderer();
