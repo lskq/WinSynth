@@ -1,3 +1,4 @@
+using NAudio.Wave;
 using WinSynth.Synth;
 using Timer = System.Windows.Forms.Timer;
 
@@ -190,8 +191,9 @@ public class MainForm : Form
 
         for (int i = 0; i < PlaybackRecorder.Tracks.Length; i++)
         {
-            var trackFile = PlaybackRecorder.Tracks[i].Item1; ;
+            var trackFile = new AudioFileReader(PlaybackRecorder.Tracks[i].Item1.FileName);
             var trackImage = Visualizer.Visualize(trackFile);
+            trackFile.Dispose();
 
             var trackPictureBox = new PictureBox
             {
