@@ -21,7 +21,7 @@ partial class MainForm : Form
         var trackPictureBox = ((Control)sender).Parent;
 
         if (trackPictureBox == null || trackPictureBox.Tag == null) return;
-        PlaybackRecorder.RemoveTrack((int)trackPictureBox.Tag);
+        PlaybackRecorder.RemoveTrack((AudioFileReader)trackPictureBox.Tag);
 
         UpdatePlaybackPanel();
     }
@@ -216,7 +216,7 @@ partial class MainForm : Form
             {
                 Image = trackImage,
                 Name = $"Track {id}",
-                Tag = id,
+                Tag = PlaybackRecorder.Tracks[id].Item1,
                 Size = trackImage.Size,
             };
 
@@ -247,7 +247,7 @@ partial class MainForm : Form
 
                 if (!removed)
                 {
-                    if ((int)pictureBox.Tag != i || numTracks == 0 || numTracks == i)
+                    if (numTracks == 0 || (AudioFileReader)pictureBox.Tag != PlaybackRecorder.Tracks[i].Item1)
                     {
                         playbackPanel.Controls.Remove(pictureBox);
                         removed = true;
@@ -258,7 +258,6 @@ partial class MainForm : Form
                 else
                 {
                     pictureBox.Name = $"Track {i}";
-                    pictureBox.Tag = i;
                     pictureBox.Location = new Point(0, headerOffset + pictureBox.Height * i);
                 }
             }

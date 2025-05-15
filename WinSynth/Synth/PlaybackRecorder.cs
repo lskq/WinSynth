@@ -19,19 +19,27 @@ public class PlaybackRecorder
         SetLongestTrack();
     }
 
-    public void RemoveTrack(int i)
+    public void RemoveTrack(AudioFileReader file)
     {
-        if (Tracks.Length < i + 1) return;
+        for (int i = 0; i < Tracks.Length; i++)
+        {
+            if (file == Tracks[i].Item1)
+            {
+                var track = Tracks[i];
 
-        Tracks[i].Item1.Dispose();
-        Tracks[i].Item2.Dispose();
+                if (i == 0)
+                    Tracks = Tracks[1..];
+                else if (i == Tracks.Length - 1)
+                    Tracks = Tracks[..^1];
+                else
+                    Tracks = [.. Tracks[..i], .. Tracks[(i + 1)..]];
 
-        if (i == 0)
-            Tracks = Tracks[1..];
-        else if (i == Tracks.Length - 1)
-            Tracks = Tracks[..^1];
-        else
-            Tracks = [.. Tracks[..i], .. Tracks[(i + 1)..]];
+                track.Item1.Dispose();
+                track.Item2.Dispose();
+
+                break;
+            }
+        }
 
         SetLongestTrack();
     }
