@@ -15,6 +15,17 @@ public class MainForm : Form
         InitializeComponent();
     }
 
+    public void TrackCloseButton_Click(object? sender, EventArgs e)
+    {
+        if (sender == null) return;
+        var trackPictureBox = ((Control)sender).Parent;
+
+        if (trackPictureBox == null || trackPictureBox.Tag == null) return;
+        PlaybackRecorder.RemoveTrack((int)trackPictureBox.Tag);
+
+        UpdatePlaybackPanel();
+    }
+
     public void ImportButton_Click(object? sender, EventArgs e)
     {
         var op = new OpenFileDialog
@@ -210,12 +221,7 @@ public class MainForm : Form
                 TextAlign = ContentAlignment.MiddleCenter,
             };
 
-            trackCloseButton.Click += (o, e) =>
-            {
-                PlaybackRecorder.RemoveTrack((int)trackPictureBox.Tag);
-
-                UpdatePlaybackPanel();
-            };
+            trackCloseButton.Click += TrackCloseButton_Click;
 
             trackPictureBox.Controls.Add(trackCloseButton);
 
