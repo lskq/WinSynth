@@ -15,6 +15,11 @@ partial class MainForm : Form
         InitializeComponent();
     }
 
+    public void PlaybackPanel_MouseUp(object? sender, MouseEventArgs e)
+    {
+        PlaybackRecorder.MoveToPos(e.Location.X * 100);
+    }
+
     public void TrackCloseButton_Click(object? sender, EventArgs e)
     {
         if (sender == null) return;
@@ -78,7 +83,7 @@ partial class MainForm : Form
 
     public void PlayButton_Click(object? sender, EventArgs e)
     {
-        PlaybackRecorder.Play();
+        PlaybackRecorder.PlayPause();
         Timer.Start();
     }
 

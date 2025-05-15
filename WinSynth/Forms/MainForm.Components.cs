@@ -281,6 +281,8 @@ partial class MainForm : Form
             Size = new Size(ClientSize.Width, ClientSize.Height - MainMenuStrip.Height - playbackBar.Height - pianoPanel.Height),
         };
 
+        playbackPanel.MouseUp += PlaybackPanel_MouseUp;
+
         Controls.Add(playbackPanel);
 
         var playbackPanelHeader = new Panel

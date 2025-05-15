@@ -44,7 +44,17 @@ public class PlaybackRecorder
         SetLongestTrack();
     }
 
-    public void Play()
+    public void MoveToPos(int milliseconds)
+    {
+        var pos = new TimeSpan(0, 0, 0, 0, milliseconds);
+
+        for (int i = 0; i < Tracks.Length; i++)
+        {
+            Tracks[i].Item1.CurrentTime = pos;
+        }
+    }
+
+    public void PlayPause()
     {
         if (!Playing && Tracks.Length > 0)
         {
