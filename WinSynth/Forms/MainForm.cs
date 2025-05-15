@@ -196,21 +196,25 @@ public class MainForm : Form
 
     public void UpdatePlaybackPanel()
     {
-        var playbackPanel = Controls.Find("PlaybackPanel", true)[0];
+        var playbackPanel = Controls.Find("PlaybackPanel", false)[0];
+        var headerOffset = playbackPanel.Controls[0].Height;
 
-        playbackPanel.Controls.Clear();
+        var numTracks = PlaybackRecorder.Tracks.Length;
+        var numPictureBoxes = playbackPanel.Controls.Count - 1;
 
-        for (int i = 0; i < PlaybackRecorder.Tracks.Length; i++)
+        if (numTracks > numPictureBoxes)
         {
-            var trackFile = new AudioFileReader(PlaybackRecorder.Tracks[i].Item1.FileName);
+            // A track has been added
+            var id = numTracks - 1;
+            var trackFile = new AudioFileReader(PlaybackRecorder.Tracks[id].Item1.FileName);
             var trackImage = Visualizer.Visualize(trackFile);
             trackFile.Dispose();
 
             var trackPictureBox = new PictureBox
             {
                 Image = trackImage,
-                Name = $"Track {i}",
-                Tag = i,
+                Name = $"Track {id}",
+                Tag = id,
                 Size = trackImage.Size,
             };
 
@@ -225,9 +229,37 @@ public class MainForm : Form
 
             trackPictureBox.Controls.Add(trackCloseButton);
 
-            trackPictureBox.Location = new Point(0, trackPictureBox.Height * i);
+            trackPictureBox.Location = new Point(0, headerOffset + trackPictureBox.Height * id);
 
             playbackPanel.Controls.Add(trackPictureBox);
+        }
+        else if (numTracks < numPictureBoxes)
+        {
+            // A track has been removed
+            bool removed = false;
+            for (int i = 0; i < numPictureBoxes; i++)
+            {
+                var pictureBox = playbackPanel.Controls[i + 1];
+
+                if (pictureBox == null || pictureBox.Tag == null) return;
+
+                if (!removed)
+                {
+                    if ((int)pictureBox.Tag != i || numTracks == 0 || numTracks == i)
+                    {
+                        playbackPanel.Controls.Remove(pictureBox);
+                        removed = true;
+                        numPictureBoxes--;
+                        i--;
+                    }
+                }
+                else
+                {
+                    pictureBox.Name = $"Track {i}";
+                    pictureBox.Tag = i;
+                    pictureBox.Location = new Point(0, headerOffset + pictureBox.Height * i);
+                }
+            }
         }
 
         PlaybackRecorder.Stop();
@@ -501,7 +533,7 @@ public class MainForm : Form
         }
 
         // Init Playback Panel
-        var PlaybackPanel = new Panel
+        var playbackPanel = new Panel
         {
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
             AutoScroll = true,
@@ -511,6 +543,15 @@ public class MainForm : Form
             Size = new Size(ClientSize.Width, ClientSize.Height - MainMenuStrip.Height - playbackBar.Height - pianoPanel.Height),
         };
 
-        Controls.Add(PlaybackPanel);
+        Controls.Add(playbackPanel);
+
+        var playbackPanelHeader = new Panel
+        {
+            BorderStyle = BorderStyle.Fixed3D,
+            Name = "PlaybackPanelHeader",
+            Size = new Size(playbackPanel.Width, playbackPanel.Height / 10),
+        };
+
+        playbackPanel.Controls.Add(playbackPanelHeader);
     }
 }
