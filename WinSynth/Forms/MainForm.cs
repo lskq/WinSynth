@@ -262,8 +262,44 @@ public class MainForm : Form
             }
         }
 
+        UpdatePlaybackPanelHeader();
+
         PlaybackRecorder.Stop();
         Timer.Start();
+    }
+
+    public void UpdatePlaybackPanelHeader()
+    {
+        var controls = Controls.Find("PlaybackPanelHeader", true);
+        if (controls.Length == 0) return;
+
+        var header = controls[0];
+        var length = header.Width;
+
+        if (PlaybackRecorder.LongestTrack.Item1 != null)
+        {
+            var longestTrackLength = (int)PlaybackRecorder.LongestTrack.Item1.TotalTime.TotalSeconds * 10;
+            length = longestTrackLength > length ? longestTrackLength : length;
+        }
+
+        if (header.Controls.Count < length / 300)
+        {
+            for (int i = 300 + 300 * header.Controls.Count; i < length; i += 300)
+            {
+                var time = new TimeSpan(0, 0, i / 10);
+
+                var timeLabel = new Label()
+                {
+                    Name = $"{time.Seconds}s",
+                    Text = $"{time.Minutes:00}:{time.Seconds:00}",
+                    TextAlign = ContentAlignment.MiddleCenter,
+                };
+
+                timeLabel.Location = new Point(i - (timeLabel.Size.Width / 2), 0);
+
+                header.Controls.Add(timeLabel);
+            }
+        }
     }
 
     public void InitializeComponent()
@@ -547,11 +583,20 @@ public class MainForm : Form
 
         var playbackPanelHeader = new Panel
         {
+            Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top,
             BorderStyle = BorderStyle.Fixed3D,
             Name = "PlaybackPanelHeader",
             Size = new Size(playbackPanel.Width, playbackPanel.Height / 10),
         };
 
         playbackPanel.Controls.Add(playbackPanelHeader);
+
+        UpdatePlaybackPanel();
+    }
+
+    protected override void OnResize(EventArgs e)
+    {
+        base.OnResize(e);
+        UpdatePlaybackPanelHeader();
     }
 }
