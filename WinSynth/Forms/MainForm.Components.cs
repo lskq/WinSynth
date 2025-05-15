@@ -286,12 +286,21 @@ partial class MainForm : Form
         var playbackPanelHeader = new Panel
         {
             Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top,
-            BorderStyle = BorderStyle.Fixed3D,
+            BorderStyle = BorderStyle.FixedSingle,
             Name = "PlaybackPanelHeader",
             Size = new Size(playbackPanel.Width, playbackPanel.Height / 10),
         };
 
         playbackPanel.Controls.Add(playbackPanelHeader);
+
+        var playbackPanelLine = new Panel
+        {
+            BackColor = Color.FromArgb(15, 15, 15),
+            Name = "PlaybackPanelLine",
+            Size = new Size(1, playbackPanel.Height),
+        };
+
+        playbackPanel.Controls.Add(playbackPanelLine);
 
         UpdatePlaybackPanel();
     }
@@ -299,6 +308,6 @@ partial class MainForm : Form
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        UpdatePlaybackPanelHeader();
+        ResizePlaybackPanel();
     }
 }

@@ -6,7 +6,7 @@ namespace WinSynth.Forms;
 
 partial class MainForm : Form
 {
-    public Timer Timer = new() { Interval = 1000 };
+    public Timer Timer = new() { Interval = 100 };
     public Piano PianoModel = new();
     public PlaybackRecorder PlaybackRecorder = new();
 
@@ -102,6 +102,8 @@ partial class MainForm : Form
         var currentTimeSpan = PlaybackRecorder.GetCurrentTime();
 
         Controls.Find("TimerLabel", true)[0].Text = $"{currentTimeSpan.Minutes:00}:{currentTimeSpan.Seconds:00}/{maxTimeSpan.Minutes:00}:{maxTimeSpan.Seconds:00}";
+
+        Controls.Find("PlaybackPanelLine", true)[0].Location = new Point((int)currentTimeSpan.TotalMilliseconds / 100, 0);
 
         if (!PlaybackRecorder.Playing)
         {
@@ -200,7 +202,7 @@ partial class MainForm : Form
         var headerOffset = playbackPanel.Controls[0].Height;
 
         var numTracks = PlaybackRecorder.Tracks.Length;
-        var numPictureBoxes = playbackPanel.Controls.Count - 1;
+        var numPictureBoxes = playbackPanel.Controls.Count - 2;
 
         if (numTracks > numPictureBoxes)
         {
@@ -239,7 +241,7 @@ partial class MainForm : Form
             bool removed = false;
             for (int i = 0; i < numPictureBoxes; i++)
             {
-                var pictureBox = playbackPanel.Controls[i + 1];
+                var pictureBox = playbackPanel.Controls[i + 2];
 
                 if (pictureBox == null || pictureBox.Tag == null) return;
 
@@ -262,18 +264,26 @@ partial class MainForm : Form
             }
         }
 
-        UpdatePlaybackPanelHeader();
+        ResizePlaybackPanel();
 
         PlaybackRecorder.Stop();
         Timer.Start();
     }
 
-    public void UpdatePlaybackPanelHeader()
+    public void ResizePlaybackPanel()
     {
-        var controls = Controls.Find("PlaybackPanelHeader", true);
+        var controls = Controls.Find("PlaybackPanel", false);
         if (controls.Length == 0) return;
 
-        var header = controls[0];
+        Panel playbackPanel = (Panel)controls[0];
+
+        var line = playbackPanel.Controls.Find("PlaybackPanelLine", false)[0];
+        if (playbackPanel.HorizontalScroll.Visible)
+            line.Height = playbackPanel.Height - SystemInformation.HorizontalScrollBarHeight;
+        else
+            line.Height = playbackPanel.Height;
+
+        var header = playbackPanel.Controls.Find("PlaybackPanelHeader", false)[0];
         var length = header.Width;
 
         if (PlaybackRecorder.LongestTrack.Item1 != null)
