@@ -18,15 +18,18 @@ partial class MainForm : Form
     public void PlaybackPanelHeaderTick_MouseUp(object? sender, MouseEventArgs e)
     {
         if (sender == null) return;
+        var offset = ((Control)sender).Location.X + e.Location.X;
 
-        var child = (Control)sender;
+        PlaybackRecorder.MoveToPos(offset * 100);
 
-        PlaybackRecorder.MoveToPos((child.Location.X + e.Location.X) * 100);
+        UpdateTime();
     }
 
     public void PlaybackPanel_MouseUp(object? sender, MouseEventArgs e)
     {
         PlaybackRecorder.MoveToPos(e.Location.X * 100);
+
+        UpdateTime();
     }
 
     public void TrackCloseButton_Click(object? sender, EventArgs e)
@@ -112,13 +115,7 @@ partial class MainForm : Form
         if (sender == null) return;
         var timer = (Timer)sender;
 
-        var maxTimeSpan = PlaybackRecorder.GetTotalTime();
-        var currentTimeSpan = PlaybackRecorder.GetCurrentTime();
-
-        Controls.Find("TimerLabel", true)[0].Text = $"{currentTimeSpan.Minutes:00}:{currentTimeSpan.Seconds:00}/{maxTimeSpan.Minutes:00}:{maxTimeSpan.Seconds:00}";
-
-        var playbackPanel = (Panel)Controls.Find("PlaybackPanel", false)[0];
-        playbackPanel.Controls.Find("PlaybackPanelLine", true)[0].Location = new Point((int)currentTimeSpan.TotalMilliseconds / (1000 / Visualizer.PixelsPerSecond) + playbackPanel.AutoScrollPosition.X, 0);
+        UpdateTime();
 
         if (!PlaybackRecorder.Playing)
         {
@@ -209,6 +206,17 @@ partial class MainForm : Form
         }
 
         PianoModel.Stop(button.TabIndex);
+    }
+
+    public void UpdateTime()
+    {
+        var maxTimeSpan = PlaybackRecorder.GetTotalTime();
+        var currentTimeSpan = PlaybackRecorder.GetCurrentTime();
+
+        Controls.Find("TimerLabel", true)[0].Text = $"{currentTimeSpan.Minutes:00}:{currentTimeSpan.Seconds:00}/{maxTimeSpan.Minutes:00}:{maxTimeSpan.Seconds:00}";
+
+        var playbackPanel = (Panel)Controls.Find("PlaybackPanel", false)[0];
+        playbackPanel.Controls.Find("PlaybackPanelLine", true)[0].Location = new Point((int)currentTimeSpan.TotalMilliseconds / (1000 / Visualizer.PixelsPerSecond) + playbackPanel.AutoScrollPosition.X, 0);
     }
 
     public void UpdatePlaybackPanel()
