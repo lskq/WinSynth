@@ -108,7 +108,8 @@ partial class MainForm : Form
 
         Controls.Find("TimerLabel", true)[0].Text = $"{currentTimeSpan.Minutes:00}:{currentTimeSpan.Seconds:00}/{maxTimeSpan.Minutes:00}:{maxTimeSpan.Seconds:00}";
 
-        Controls.Find("PlaybackPanelLine", true)[0].Location = new Point((int)currentTimeSpan.TotalMilliseconds / 100, 0);
+        var playbackPanel = (Panel)Controls.Find("PlaybackPanel", false)[0];
+        playbackPanel.Controls.Find("PlaybackPanelLine", true)[0].Location = new Point((int)currentTimeSpan.TotalMilliseconds / (1000 / Visualizer.PixelsPerSecond) + playbackPanel.AutoScrollPosition.X, 0);
 
         if (!PlaybackRecorder.Playing)
         {
@@ -300,7 +301,7 @@ partial class MainForm : Form
         {
             for (int i = 300 + 300 * header.Controls.Count; i < length; i += 300)
             {
-                var time = new TimeSpan(0, 0, i / 10);
+                var time = new TimeSpan(0, 0, i / Visualizer.PixelsPerSecond);
 
                 var timeLabel = new Label()
                 {

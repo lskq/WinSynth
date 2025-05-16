@@ -5,6 +5,8 @@ namespace WinSynth.Synth;
 
 public static class Visualizer
 {
+    public const int PixelsPerSecond = 10;
+
     public static Image Visualize(WaveStream audioFile)
     {
 
@@ -18,7 +20,7 @@ public static class Visualizer
 
         var myRendererSettings = new StandardWaveFormRendererSettings
         {
-            Width = (int)audioFile.TotalTime.TotalSeconds * 10,
+            Width = (int)audioFile.TotalTime.TotalSeconds * PixelsPerSecond,
             TopHeight = 48,
             BottomHeight = 48
         };
