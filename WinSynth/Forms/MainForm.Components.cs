@@ -293,7 +293,7 @@ partial class MainForm : Form
             Size = new Size(playbackPanel.Width, playbackPanel.Height / 10),
         };
 
-        playbackPanelHeader.MouseUp += PlaybackPanel_MouseUp;
+        playbackPanelHeader.MouseUp += PlaybackPanelHeader_MouseUp;
         playbackPanel.Controls.Add(playbackPanelHeader);
 
         var playbackPanelLine = new Panel

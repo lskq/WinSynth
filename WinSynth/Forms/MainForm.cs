@@ -25,9 +25,19 @@ partial class MainForm : Form
         UpdateTime();
     }
 
-    public void PlaybackPanel_MouseUp(object? sender, MouseEventArgs e)
+    public void PlaybackPanelHeader_MouseUp(object? sender, MouseEventArgs e)
     {
         PlaybackRecorder.MoveToPos(e.Location.X * 100);
+
+        UpdateTime();
+    }
+
+    public void PlaybackPanel_MouseUp(object? sender, MouseEventArgs e)
+    {
+        if (sender == null) return;
+        var playbackPanel = (Panel)sender;
+
+        PlaybackRecorder.MoveToPos((e.Location.X - playbackPanel.AutoScrollPosition.X) * 100);
 
         UpdateTime();
     }
