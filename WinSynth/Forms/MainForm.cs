@@ -15,6 +15,15 @@ partial class MainForm : Form
         InitializeComponent();
     }
 
+    public void PlaybackPanelHeaderTick_MouseUp(object? sender, MouseEventArgs e)
+    {
+        if (sender == null) return;
+
+        var child = (Control)sender;
+
+        PlaybackRecorder.MoveToPos((child.Location.X + e.Location.X) * 100);
+    }
+
     public void PlaybackPanel_MouseUp(object? sender, MouseEventArgs e)
     {
         PlaybackRecorder.MoveToPos(e.Location.X * 100);
@@ -205,7 +214,7 @@ partial class MainForm : Form
     public void UpdatePlaybackPanel()
     {
         var playbackPanel = Controls.Find("PlaybackPanel", false)[0];
-        var headerOffset = playbackPanel.Controls[0].Height;
+        var headerOffset = playbackPanel.Controls.Find("PlaybackPanelHeader", false)[0].Height;
 
         var numTracks = PlaybackRecorder.Tracks.Length;
         var numPictureBoxes = playbackPanel.Controls.Count - 2;
@@ -297,22 +306,60 @@ partial class MainForm : Form
             length = longestTrackLength > length ? longestTrackLength : length;
         }
 
-        if (header.Controls.Count < length / 300)
+        var pixelsPerTenSeconds = Visualizer.PixelsPerSecond;
+        if (header.Controls.Count < length / pixelsPerTenSeconds)
         {
-            for (int i = 300 + 300 * header.Controls.Count; i < length; i += 300)
+            Control[] labels = [];
+
+            for (int i = pixelsPerTenSeconds + pixelsPerTenSeconds * header.Controls.Count; i < length; i += pixelsPerTenSeconds)
             {
                 var time = new TimeSpan(0, 0, i / Visualizer.PixelsPerSecond);
 
-                var timeLabel = new Label()
+                Control tick;
+                if (time.TotalSeconds % 30 == 0)
                 {
-                    Name = $"{time.Seconds}s",
-                    Text = $"{time.Minutes:00}:{time.Seconds:00}",
-                    TextAlign = ContentAlignment.MiddleCenter,
-                };
+                    tick = new Label()
+                    {
+                        BackColor = Color.Transparent,
+                        Text = $"{time.Minutes:00}:{time.Seconds:00}",
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Size = new Size(34, header.Height),
+                    };
 
-                timeLabel.Location = new Point(i - (timeLabel.Size.Width / 2), 0);
+                    tick.Location = new Point(i - (tick.Size.Width / 2), 0);
 
-                header.Controls.Add(timeLabel);
+                    labels = [.. labels, tick];
+                }
+                else
+                {
+                    tick = new Panel() { BackColor = Color.FromArgb(15, 15, 15) };
+
+                    if (time.TotalSeconds % 10 == 0)
+                    {
+                        tick.Location = new Point(i, header.Height / 10);
+                        tick.Size = new Size(1, header.Height * 4 / 5);
+                    }
+                    else if (time.TotalSeconds % 5 == 0)
+                    {
+                        tick.Location = new Point(i, header.Height / 5);
+                        tick.Size = new Size(1, header.Height * 3 / 5);
+                    }
+                    else
+                    {
+                        tick.Location = new Point(i, header.Height * 3 / 10);
+                        tick.Size = new Size(1, header.Height * 2 / 5);
+                    }
+                }
+
+                tick.Name = Name = $"{time.Seconds}s";
+                tick.MouseUp += PlaybackPanelHeaderTick_MouseUp;
+
+                header.Controls.Add(tick);
+            }
+
+            foreach (var label in labels)
+            {
+                label.BringToFront();
             }
         }
     }
