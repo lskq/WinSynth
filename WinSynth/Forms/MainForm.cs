@@ -263,7 +263,7 @@ partial class MainForm : Form
         {
             // A track has been added
             var id = numTracks - 1;
-            var trackFile = new AudioFileReader(PlaybackRecorder.Tracks[id].Item1.FileName);
+            var trackFile = new AudioFileReader(PlaybackRecorder.Tracks[id].AudioFile.FileName);
             var trackImage = Visualizer.Visualize(trackFile);
             trackFile.Dispose();
 
@@ -271,7 +271,7 @@ partial class MainForm : Form
             {
                 Image = trackImage,
                 Name = $"Track {id}",
-                Tag = PlaybackRecorder.Tracks[id].Item1,
+                Tag = PlaybackRecorder.Tracks[id],
                 Size = trackImage.Size,
             };
 
@@ -304,7 +304,7 @@ partial class MainForm : Form
 
                 if (!removed)
                 {
-                    if (numTracks == 0 || (AudioFileReader)pictureBox.Tag != PlaybackRecorder.Tracks[i].Item1)
+                    if (numTracks == 0 || (AudioFileReader)pictureBox.Tag != PlaybackRecorder.Tracks[i].AudioFile)
                     {
                         playbackPanel.Controls.Remove(pictureBox);
                         removed = true;
@@ -342,9 +342,9 @@ partial class MainForm : Form
         var header = playbackPanel.Controls.Find("PlaybackPanelHeader", false)[0];
         var length = header.Width;
 
-        if (PlaybackRecorder.LongestTrack.Item1 != null)
+        if (PlaybackRecorder.LongestTrack != null)
         {
-            var longestTrackLength = (int)PlaybackRecorder.LongestTrack.Item1.TotalTime.TotalSeconds * 10;
+            var longestTrackLength = (int)PlaybackRecorder.LongestTrack.AudioFile.TotalTime.TotalSeconds * 10;
             length = longestTrackLength > length ? longestTrackLength : length;
         }
 

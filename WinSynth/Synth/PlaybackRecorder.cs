@@ -4,17 +4,15 @@ namespace WinSynth.Synth;
 
 public class PlaybackRecorder
 {
-    public (AudioFileReader?, WaveOutEvent?) LongestTrack = (null, null);
-    public (AudioFileReader, WaveOutEvent)[] Tracks { get; set; } = [];
+    public Track? LongestTrack = null;
+    public Track[] Tracks { get; set; } = [];
 
     public bool Playing = false;
 
     public void AddTrack(string filepath)
     {
-        var input = new AudioFileReader(filepath);
-        var output = new WaveOutEvent();
-        output.Init(input);
-        Tracks = [.. Tracks, (input, output)];
+        var track = new Track(filepath);
+        Tracks = [.. Tracks, track];
 
         SetLongestTrack();
     }
@@ -23,7 +21,7 @@ public class PlaybackRecorder
     {
         for (int i = 0; i < Tracks.Length; i++)
         {
-            if (file == Tracks[i].Item1)
+            if (file == Tracks[i].AudioFile)
             {
                 var track = Tracks[i];
 
@@ -34,8 +32,7 @@ public class PlaybackRecorder
                 else
                     Tracks = [.. Tracks[..i], .. Tracks[(i + 1)..]];
 
-                track.Item1.Dispose();
-                track.Item2.Dispose();
+                track.Dispose();
 
                 break;
             }
@@ -50,7 +47,7 @@ public class PlaybackRecorder
 
         for (int i = 0; i < Tracks.Length; i++)
         {
-            Tracks[i].Item1.CurrentTime = pos;
+            Tracks[i].AudioFile.CurrentTime = pos;
         }
     }
 
@@ -58,12 +55,12 @@ public class PlaybackRecorder
     {
         if (!Playing && Tracks.Length > 0)
         {
-            for (int i = 0; i < Tracks.Length; i++) Tracks[i].Item2.Play();
+            for (int i = 0; i < Tracks.Length; i++) Tracks[i].WaveOut.Play();
             Playing = true;
         }
         else
         {
-            for (int i = 0; i < Tracks.Length; i++) Tracks[i].Item2.Pause();
+            for (int i = 0; i < Tracks.Length; i++) Tracks[i].WaveOut.Pause();
             Playing = false;
         }
     }
@@ -72,24 +69,24 @@ public class PlaybackRecorder
     {
         for (int i = 0; i < Tracks.Length; i++)
         {
-            Tracks[i].Item2.Stop();
-            Tracks[i].Item1.Position = 0;
+            Tracks[i].WaveOut.Stop();
+            Tracks[i].AudioFile.Position = 0;
         }
         Playing = false;
     }
 
     public TimeSpan GetCurrentTime()
     {
-        if (LongestTrack.Item1 != null)
-            return LongestTrack.Item1.CurrentTime;
+        if (LongestTrack != null)
+            return LongestTrack.AudioFile.CurrentTime;
         else
             return new TimeSpan(0);
     }
 
     public TimeSpan GetTotalTime()
     {
-        if (LongestTrack.Item1 != null)
-            return LongestTrack.Item1.TotalTime;
+        if (LongestTrack != null)
+            return LongestTrack.AudioFile.TotalTime;
         else
             return new TimeSpan(0);
     }
@@ -98,14 +95,14 @@ public class PlaybackRecorder
     {
         if (Tracks.Length == 0)
         {
-            LongestTrack = (null, null);
+            LongestTrack = null;
         }
         else
         {
             var longest = Tracks[0];
             foreach (var track in Tracks[1..])
             {
-                if (track.Item1.TotalTime > longest.Item1.TotalTime)
+                if (track.AudioFile.TotalTime > longest.AudioFile.TotalTime)
                 {
                     longest = track;
                 }
