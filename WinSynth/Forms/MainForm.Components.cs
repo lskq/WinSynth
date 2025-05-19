@@ -207,6 +207,7 @@ partial class MainForm : Form
             };
 
             pianoKey.FlatAppearance.BorderSize = 1;
+            pianoKey.FlatAppearance.MouseDownBackColor = Color.FromArgb(255, 255, 0);
 
             pianoKey.MouseDown += PianoKey_MouseDown;
             pianoKey.MouseUp += PianoKey_MouseUp;
