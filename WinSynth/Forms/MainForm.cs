@@ -53,6 +53,28 @@ partial class MainForm : Form
         UpdatePlaybackPanel();
     }
 
+    public void TrackPictureBox_Click(object? sender, EventArgs e)
+    {
+        if (sender == null) return;
+        var pictureBox = (Control)sender;
+
+        var playbackPanel = pictureBox.Parent;
+        if (playbackPanel == null) return;
+
+        var oldHighlights = playbackPanel.Controls.Find("Highlight", true);
+        if (oldHighlights.Length > 0) oldHighlights[0].Dispose();
+
+        var highlightPanel = new Panel()
+        {
+            BackColor = Color.FromArgb(127, 0, 0, 255),
+            Name = "Highlight",
+            Size = pictureBox.Size,
+        };
+
+        pictureBox.Controls.Add(highlightPanel);
+        highlightPanel.Focus();
+    }
+
     public void ImportButton_Click(object? sender, EventArgs e)
     {
         var op = new OpenFileDialog
@@ -263,6 +285,8 @@ partial class MainForm : Form
             trackCloseButton.Click += TrackCloseButton_Click;
 
             trackPictureBox.Controls.Add(trackCloseButton);
+
+            trackPictureBox.Click += TrackPictureBox_Click;
 
             trackPictureBox.Location = new Point(0, headerOffset + trackPictureBox.Height * id);
 
