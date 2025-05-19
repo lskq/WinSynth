@@ -48,7 +48,7 @@ partial class MainForm : Form
         var trackPictureBox = ((Control)sender).Parent;
 
         if (trackPictureBox == null || trackPictureBox.Tag == null) return;
-        PlaybackRecorder.RemoveTrack((AudioFileReader)trackPictureBox.Tag);
+        PlaybackRecorder.RemoveTrack((Track)trackPictureBox.Tag);
 
         UpdatePlaybackPanel();
     }
@@ -304,7 +304,7 @@ partial class MainForm : Form
 
                 if (!removed)
                 {
-                    if (numTracks == 0 || (AudioFileReader)pictureBox.Tag != PlaybackRecorder.Tracks[i].AudioFile)
+                    if (numTracks == 0 || (Track)pictureBox.Tag != PlaybackRecorder.Tracks[i])
                     {
                         playbackPanel.Controls.Remove(pictureBox);
                         removed = true;

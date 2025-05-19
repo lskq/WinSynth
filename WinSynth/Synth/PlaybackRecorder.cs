@@ -17,14 +17,12 @@ public class PlaybackRecorder
         SetLongestTrack();
     }
 
-    public void RemoveTrack(AudioFileReader file)
+    public void RemoveTrack(Track track)
     {
         for (int i = 0; i < Tracks.Length; i++)
         {
-            if (file == Tracks[i].AudioFile)
+            if (track == Tracks[i])
             {
-                var track = Tracks[i];
-
                 if (i == 0)
                     Tracks = Tracks[1..];
                 else if (i == Tracks.Length - 1)
