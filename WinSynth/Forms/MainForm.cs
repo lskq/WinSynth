@@ -63,16 +63,19 @@ partial class MainForm : Form
                      "AIFF files (*.aiff)|*.aiff|" +
                      "All files (*.*)|*.*",
             FilterIndex = 4,
-            RestoreDirectory = true
+            Multiselect = true,
+            RestoreDirectory = true,
+
         };
 
         if (op.ShowDialog() == DialogResult.OK)
         {
-            var filepath = op.FileName;
-            PlaybackRecorder.AddTrack(filepath);
-            Timer.Start();
-
-            UpdatePlaybackPanel();
+            foreach (var filename in op.FileNames)
+            {
+                PlaybackRecorder.AddTrack(filename);
+                Timer.Start();
+                UpdatePlaybackPanel();
+            }
         }
     }
 
@@ -280,7 +283,7 @@ partial class MainForm : Form
 
                 if (!removed)
                 {
-                    if (numTracks == 0 || (AudioFileReader)pictureBox.Tag != PlaybackRecorder.Tracks[i].Item1)
+                    if (numTracks == 0 || i == numPictureBoxes - 1 || (AudioFileReader)pictureBox.Tag != PlaybackRecorder.Tracks[i].Item1)
                     {
                         playbackPanel.Controls.Remove(pictureBox);
                         removed = true;
